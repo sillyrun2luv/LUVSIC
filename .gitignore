@@ -35,6 +35,9 @@ cloudflared.exe
 dev-dist/
 dist/
 
+# 临时脚本
+upload-to-github.ps1
+
 # Trae 临时文件
 .trae/
 
