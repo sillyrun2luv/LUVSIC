@@ -1,0 +1,9 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.selfdefense.app',
+  appName: '自卫吧',
+  webDir: 'dist'
+};
+
+export default config;

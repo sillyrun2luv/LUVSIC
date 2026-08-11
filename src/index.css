@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    /* 主题强调色（RGB 通道，空格分隔），默认「烛火」 */
+    --accent: 232 168 124;
+    --accent-dim: 201 138 94;
+    --accent-deep: 168 106 67;
+    --accent-glow: 242 201 168;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: #15131a;
+    color: #ede7e0;
+    font-family: "Noto Sans SC", system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* 暖色微光氛围，像烛火映在墙上的渐变 */
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgb(var(--accent) / 0.12), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 110% 20%, rgba(74, 93, 90, 0.18), transparent 55%),
+      radial-gradient(ellipse 70% 50% at -10% 80%, rgba(201, 169, 166, 0.08), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* 极细的颗粒噪点，纸质感 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.3);
+    color: #fff;
+  }
+
+  /* 滚动条 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--accent) / 0.2);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--accent) / 0.35);
+  }
+
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+
+  /* 数字输入框去掉默认增减按钮 */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .surface {
+    @apply rounded-2xl border border-line/80 bg-ink-850/70 backdrop-blur-sm;
+  }
+
+  .surface-hover {
+    @apply transition-all duration-300 hover:border-amber/40 hover:bg-ink-800/80;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-sm transition-all duration-200 cursor-pointer select-none;
+  }
+  .chip-active {
+    @apply border-amber bg-amber/15 text-amber-glow shadow-glow;
+  }
+
+  .label-eyebrow {
+    @apply text-xs font-medium uppercase tracking-[0.2em] text-muted;
+  }
+
+  .stat-number {
+    @apply font-mono tabular-nums;
+  }
+}

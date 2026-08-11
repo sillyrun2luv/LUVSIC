@@ -1,0 +1,30 @@
+allprojects {
+    repositories {
+        all { ArtifactRepository repo ->
+            if (repo instanceof MavenArtifactRepository) {
+                def url = repo.url.toString()
+                if (url.contains('dl.google.com')) {
+                    repo.setUrl('https://maven.aliyun.com/repository/google')
+                }
+                if (url.contains('repo1.maven.org')) {
+                    repo.setUrl('https://maven.aliyun.com/repository/central')
+                }
+            }
+        }
+    }
+    buildscript {
+        repositories {
+            all { ArtifactRepository repo ->
+                if (repo instanceof MavenArtifactRepository) {
+                    def url = repo.url.toString()
+                    if (url.contains('dl.google.com')) {
+                        repo.setUrl('https://maven.aliyun.com/repository/google')
+                    }
+                    if (url.contains('repo1.maven.org')) {
+                        repo.setUrl('https://maven.aliyun.com/repository/central')
+                    }
+                }
+            }
+        }
+    }
+}
