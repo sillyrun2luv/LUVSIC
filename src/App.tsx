@@ -4,6 +4,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useThemeStore, applyTheme } from "@/store/useThemeStore";
 import { initAuth } from "@/store/useAuthStore";
 import Overview from "@/pages/Overview";
+import Calendar from "@/pages/Calendar";
 import Record from "@/pages/Record";
 import History from "@/pages/History";
 import Insights from "@/pages/Insights";
@@ -56,6 +57,7 @@ export default function App() {
 
       <main className="relative z-10 mx-auto w-full max-w-2xl flex-1 px-4 pb-4 pt-10 sm:pt-14">
         {view === "overview" && <Overview />}
+        {view === "calendar" && <Calendar />}
         {view === "record" && <Record />}
         {view === "history" && <History />}
         {view === "insights" && <Insights />}

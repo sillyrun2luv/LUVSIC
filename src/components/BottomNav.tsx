@@ -1,10 +1,11 @@
-import { LayoutDashboard, NotebookPen, History, LineChart } from "lucide-react";
+import { LayoutDashboard, NotebookPen, History, LineChart, Calendar } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import type { ViewKey } from "@/types";
 import { cn } from "@/lib/utils";
 
 const ITEMS: { key: ViewKey; label: string; icon: typeof LayoutDashboard }[] = [
   { key: "overview", label: "概览", icon: LayoutDashboard },
+  { key: "calendar", label: "日历", icon: Calendar },
   { key: "record", label: "记录", icon: NotebookPen },
   { key: "history", label: "历史", icon: History },
   { key: "insights", label: "洞察", icon: LineChart },

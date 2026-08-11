@@ -41,4 +41,4 @@ export interface Settings {
   lock: LockConfig; // 密码锁
 }
 
-export type ViewKey = "overview" | "record" | "history" | "insights";
+export type ViewKey = "overview" | "record" | "history" | "insights" | "calendar";

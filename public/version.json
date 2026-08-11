@@ -1,5 +1,5 @@
 {
-  "version": "1.0.3",
-  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.0.3/ziweiba.apk",
-  "notes": "修复概览标语不随时间更新的问题，时段问候语实时切换。"
+  "version": "1.0.4",
+  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.0.4/ziweiba.apk",
+  "notes": "新增日历页，支持周/月/年三种视图切换，日期热力标记，点击查看当天记录详情；修复详情抽屉滚动问题。"
 }

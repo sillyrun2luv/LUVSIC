@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Check, Pencil, LayoutDashboard, NotebookPen, History, LineChart, Settings } from "lucide-react";
+import { X, Check, Pencil, LayoutDashboard, NotebookPen, History, LineChart, Settings, Calendar } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useProfileStore, AVATAR_OPTIONS } from "@/store/useProfileStore";
 import { useThemeStore, THEMES } from "@/store/useThemeStore";
@@ -22,6 +22,13 @@ const NAV_ITEMS: {
     icon: LayoutDashboard,
     activeCls: "bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30",
     idleCls: "text-sky-400/80 hover:bg-sky-500/10 hover:text-sky-300",
+  },
+  {
+    key: "calendar",
+    label: "日历",
+    icon: Calendar,
+    activeCls: "bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-500/30",
+    idleCls: "text-cyan-400/80 hover:bg-cyan-500/10 hover:text-cyan-300",
   },
   {
     key: "record",
