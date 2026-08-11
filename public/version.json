@@ -1,5 +1,5 @@
 {
-  "version": "1.0.2",
-  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.0.1/自卫吧.apk",
-  "notes": "【测试用】验证更新检查逻辑是否生效。"
+  "version": "1.0.1",
+  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.0.1/default.apk",
+  "notes": "修复已知问题，优化云同步稳定性。"
 }
