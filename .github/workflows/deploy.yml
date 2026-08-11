@@ -81,6 +81,8 @@ jobs:
         run: |
           yes | sdkmanager --licenses || true
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME"
           sdkmanager --list_installed
 
       - name: Rebuild PWA (for Capacitor sync)
@@ -92,11 +94,19 @@ jobs:
       - name: Capacitor sync to Android
         run: npx cap sync android
 
+      - name: Write local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          cat android/local.properties
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
       - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug --no-daemon --stacktrace
+        run: cd android && ./gradlew assembleDebug --no-daemon --stacktrace --info
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
 
       - name: Copy and rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk ziweiba.apk
