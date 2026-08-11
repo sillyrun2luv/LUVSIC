@@ -76,7 +76,12 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 11076708
-          packages: 'platforms;android-36 build-tools;36.0.0'
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          sdkmanager --list_installed
 
       - name: Rebuild PWA (for Capacitor sync)
         run: npm run build
@@ -91,7 +96,7 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug --no-daemon
+        run: cd android && ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Copy and rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk ziweiba.apk
