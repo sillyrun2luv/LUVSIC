@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
-  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.0.1/default.apk",
-  "notes": "修复已知问题，优化云同步稳定性。"
+  "version": "1.0.2",
+  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.0.2/ziweiba.apk",
+  "notes": "新增退出登录功能，修复云账户登录问题。"
 }

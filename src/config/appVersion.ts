@@ -1,7 +1,7 @@
 /** App 版本配置 */
 
 // 当前版本号（每次发新版需要手动改这里）
-export const APP_VERSION = "1.0.1";
+export const APP_VERSION = "1.0.2";
 
 // 版本检查 URL（从 GitHub 仓库拉取 version.json）
 // 仓库建好后替换成你的实际地址

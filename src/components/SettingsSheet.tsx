@@ -577,8 +577,9 @@ function ConfirmDialog({
 function CloudSyncCard() {
   const user = useAuthStore((s) => s.user);
   const session = useAuthStore((s) => s.session);
+  const signOut = useAuthStore((s) => s.signOut);
   const openAuth = useUIStore((s) => s.openAuth);
-  const [confirm, setConfirm] = useState<"upload" | "download" | null>(null);
+  const [confirm, setConfirm] = useState<"upload" | "download" | "logout" | null>(null);
   const [loading, setLoading] = useState(false);
   const [cloudCount, setCloudCount] = useState<number | null>(null);
   const records = useRecordStore((s) => s.records);
@@ -689,6 +690,12 @@ function CloudSyncCard() {
           >
             {loading ? "处理中…" : "从云端下载"}
           </button>
+          <button
+            onClick={() => setConfirm("logout")}
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-rose-300/80 transition-colors hover:border-rose-500/40 hover:text-rose-300"
+          >
+            退出登录
+          </button>
         </div>
       </div>
 
@@ -707,6 +714,19 @@ function CloudSyncCard() {
           message="将用云端数据覆盖本地所有记录。本地原有数据会被替换，5 秒内可撤销。"
           confirmLabel="确认下载"
           onConfirm={doDownload}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
+      {confirm === "logout" && (
+        <ConfirmDialog
+          title="退出登录"
+          message="确定要退出云端账户吗？本地数据不会被删除。"
+          confirmLabel="退出登录"
+          onConfirm={async () => {
+            setConfirm(null);
+            await signOut();
+            toast("已退出登录", "success");
+          }}
           onCancel={() => setConfirm(null)}
         />
       )}
