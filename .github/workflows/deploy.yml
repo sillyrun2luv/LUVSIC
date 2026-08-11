@@ -76,7 +76,7 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 11076708
-          packages: 'platforms;android-34 build-tools;34.0.0'
+          packages: 'platforms;android-36 build-tools;36.0.0'
 
       - name: Rebuild PWA (for Capacitor sync)
         run: npm run build
