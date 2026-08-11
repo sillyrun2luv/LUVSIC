@@ -96,20 +96,20 @@ jobs:
       - name: Copy and rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk ziweiba.apk
 
-      - name: Read version from version.json
-        id: read_version
-        run: echo "VERSION=$(cat public/version.json | grep -o '"version": *"[^"]*"' | cut -d'"' -f4)" >> $GITHUB_OUTPUT
-
-      - name: Read release notes
-        id: read_notes
-        run: echo "NOTES=$(cat public/version.json | grep -o '"notes": *"[^"]*"' | cut -d'"' -f4)" >> $GITHUB_OUTPUT
+      - name: Read version and notes from version.json
+        id: read_info
+        run: |
+          VERSION=$(jq -r '.version' public/version.json)
+          NOTES=$(jq -r '.notes' public/version.json)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "NOTES=$NOTES" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release and upload APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.read_version.outputs.VERSION }}
-          name: v${{ steps.read_version.outputs.VERSION }}
-          body: ${{ steps.read_notes.outputs.NOTES }}
+          tag_name: v${{ steps.read_info.outputs.VERSION }}
+          name: v${{ steps.read_info.outputs.VERSION }}
+          body: ${{ steps.read_info.outputs.NOTES }}
           files: ziweiba.apk
           generate_release_notes: false
           fail_on_unmatched_files: true
