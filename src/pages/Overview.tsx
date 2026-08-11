@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Sparkles, TrendingUp } from "lucide-react";
 import { useRecordStore } from "@/store/useRecordStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -20,7 +20,11 @@ export default function Overview() {
   const setView = useUIStore((s) => s.setView);
   const openDetail = useUIStore((s) => s.openDetail);
 
-  const now = useMemo(() => new Date(), []);
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
   const today = useMemo(() => todayStats(records, now), [records, now]);
   const week = useMemo(() => dailyStats(records, 7, now), [records, now]);
   const last = useMemo(() => sinceLast(records, now), [records, now]);
