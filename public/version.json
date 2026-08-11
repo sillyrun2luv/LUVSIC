@@ -1,5 +1,5 @@
 {
-  "version": "1.0.2",
-  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.0.2/ziweiba.apk",
-  "notes": "新增退出登录功能，修复云账户登录问题。"
+  "version": "1.0.3",
+  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.0.3/ziweiba.apk",
+  "notes": "修复概览标语不随时间更新的问题，时段问候语实时切换。"
 }

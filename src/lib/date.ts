@@ -4,7 +4,7 @@ const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 
 /** 当天 0 点的时间戳（毫秒） */
 export function startOfDay(d: Date | number): number {
-  const date = typeof d === "number" ? new Date(d) : d;
+  const date = typeof d === "number" ? new Date(d) : new Date(d);
   date.setHours(0, 0, 0, 0);
   return date.getTime();
 }

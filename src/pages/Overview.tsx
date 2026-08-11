@@ -20,16 +20,17 @@ export default function Overview() {
   const setView = useUIStore((s) => s.setView);
   const openDetail = useUIStore((s) => s.openDetail);
 
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60000);
+    const timer = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(timer);
   }, []);
-  const today = useMemo(() => todayStats(records, now), [records, now]);
-  const week = useMemo(() => dailyStats(records, 7, now), [records, now]);
-  const last = useMemo(() => sinceLast(records, now), [records, now]);
-  const streak = useMemo(() => streakDays(records, now), [records, now]);
-  const g = greeting(now);
+  const nowDate = useMemo(() => new Date(now), [now]);
+  const today = useMemo(() => todayStats(records, nowDate), [records, nowDate]);
+  const week = useMemo(() => dailyStats(records, 7, nowDate), [records, nowDate]);
+  const last = useMemo(() => sinceLast(records, nowDate), [records, nowDate]);
+  const streak = useMemo(() => streakDays(records, nowDate), [records, nowDate]);
+  const g = greeting(nowDate);
 
   const recent = useMemo(
     () => [...records].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5),
@@ -42,7 +43,7 @@ export default function Overview() {
     <div className="animate-fadeIn space-y-8">
       {/* 问候 */}
       <header>
-        <p className="label-eyebrow mb-2">{formatDateCN(now)}</p>
+        <p className="label-eyebrow mb-2">{formatDateCN(nowDate)}</p>
         <h1 className="font-display text-4xl font-medium leading-tight text-cream sm:text-5xl">
           {g.period}，
           <br />
@@ -89,7 +90,7 @@ export default function Overview() {
             <div className="text-xs text-muted">本周次数</div>
           </div>
         </div>
-        <WeekBars data={week} now={now} />
+        <WeekBars data={week} now={nowDate} />
       </section>
 
       {/* 快速记录 */}
