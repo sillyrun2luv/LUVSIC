@@ -6,7 +6,7 @@ export const APP_VERSION = "1.0.1";
 // 版本检查 URL（从 GitHub 仓库拉取 version.json）
 // 仓库建好后替换成你的实际地址
 export const VERSION_CHECK_URL =
-  "https://cdn.jsdelivr.net/gh/sillyrun2luv/LUVSIC@main/version.json";
+  "https://sillyrun2luv.github.io/LUVSIC/version.json";
 
 export interface VersionInfo {
   version: string;
