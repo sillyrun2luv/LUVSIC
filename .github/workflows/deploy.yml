@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to GitHub Pages + Release APK
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-pwa:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,19 +29,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build PWA
         run: npm run build
         env:
           VITE_SUPABASE_URL: https://xfjqpbywcjjaiwyzibtu.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmanFwYnl3Y2pqYWl3eXppYnR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0MTcwNzcsImV4cCI6MjEwMTk5MzA3N30.JXshm5cghu5jAFK_tIKUiu9qAwazhFD2G4vBPbZ9mGA
 
-      - name: Upload artifact
+      - name: Upload PWA artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
-  deploy:
-    needs: build
+  deploy-pwa:
+    needs: build-pwa
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -50,3 +50,66 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  build-and-release-apk:
+    needs: build-pwa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'microsoft'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+          packages: 'platforms;android-34 build-tools;34.0.0'
+
+      - name: Rebuild PWA (for Capacitor sync)
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://xfjqpbywcjjaiwyzibtu.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmanFwYnl3Y2pqYWl3eXppYnR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0MTcwNzcsImV4cCI6MjEwMTk5MzA3N30.JXshm5cghu5jAFK_tIKUiu9qAwazhFD2G4vBPbZ9mGA
+
+      - name: Capacitor sync to Android
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK
+        run: cd android && ./gradlew assembleDebug --no-daemon
+
+      - name: Copy and rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ziweiba.apk
+
+      - name: Read version from version.json
+        id: read_version
+        run: echo "VERSION=$(cat public/version.json | grep -o '"version": *"[^"]*"' | cut -d'"' -f4)" >> $GITHUB_OUTPUT
+
+      - name: Read release notes
+        id: read_notes
+        run: echo "NOTES=$(cat public/version.json | grep -o '"notes": *"[^"]*"' | cut -d'"' -f4)" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release and upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.read_version.outputs.VERSION }}
+          name: v${{ steps.read_version.outputs.VERSION }}
+          body: ${{ steps.read_notes.outputs.NOTES }}
+          files: ziweiba.apk
+          generate_release_notes: false
+          fail_on_unmatched_files: true
