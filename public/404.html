@@ -6,31 +6,51 @@
     <script>
       // GitHub Pages SPA fallback for Project Pages (base="/LUVSIC/")
       //
-      // 说明：GitHub Pages 对 Project Pages 有二级路径 base（/LUVSIC/）。
-      // 常见坏场景：
-      //   1) 用户直接访问 /LUVSIC?x=1 或 /LUVSIC#access_token=... （无尾斜杠）
-      //      → 浏览器理解为文件而不是目录，Pages 返回 404.html
-      //   2) 邮件客户端"安全链接重写"后，尾部路径错乱
+      // IMPORTANT：这是整个验证链接 404 修复的最关键第一层。
+      // 用户点邮件里的 ConfirmationURL，会先请求：
+      //   https://sillyrun2luv.github.io/LUVSIC#access_token=...&type=signup
+      // 由于 pathname 是 "/LUVSIC"（非 "/LUVSIC/" 也非现有静态文件），
+      // GitHub Pages 会直接走 404.html 接管。这里发生的 **window.location.replace()**
+      // 如果不先保存 URL hash，手机微信/QQ 内置浏览器会直接把 hash 丢掉，
+      // 导致后续 index.html / Supabase SDK 根本看不到 access_token → 404 或空白页。
       //
-      // 我们的修复：
-      //   - 永远把页面跳回项目的"正确根目录"：${origin}/LUVSIC/#<hash>?<query>
-      //   - base 自动识别：优先用 location.pathname 第二段非空目录作为项目名，
-      //     找不到就回退 LUVSIC，保证不出用户站根 /
+      // 因此此脚本顺序必须是：
+      //   1) 立刻把 access_token（连同整串 hash）写入 sessionStorage 备份
+      //   2) 再 replace 到正确的项目根路径 /LUVSIC/
+      //  （稍后 index.html 会从 sessionStorage 恢复 hash，Supabase SDK 才能解析）
       (function () {
-        var pathSegments = window.location.pathname.split('/').filter(Boolean);
-        var projectName = pathSegments[0] || 'LUVSIC';
-        // 兜底：如果第一段看起来像 LUVSIC 仓库就用它，否则仍用 LUVSIC
-        if (!/^[A-Za-z0-9_.-]+$/.test(projectName)) projectName = 'LUVSIC';
-
-        var correctPath = '/' + projectName + '/';
-        var search = window.location.search || '';
-        var hash = window.location.hash || '';
-        var target = window.location.origin + correctPath + search + hash;
         try {
-          window.location.replace(target);
+          var RAW_HASH = window.location.hash || '';
+          var HAS_ACCESS_TOKEN =
+            /access_token=/.test(window.location.href) || /^#?access_token=/.test(RAW_HASH);
+          if (HAS_ACCESS_TOKEN) {
+            var normalized = RAW_HASH.charAt(0) === '#' ? RAW_HASH : '#' + RAW_HASH;
+            window.sessionStorage.setItem('luvsic.authHash', normalized);
+            window.sessionStorage.setItem('luvsic.authHashAt', String(Date.now()));
+          }
         } catch (e) {
-          // 极端情况降级：用 assign
-          window.location.href = target;
+          // storage 失败就算了，别阻塞重定向
+        }
+
+        try {
+          var pathSegments = window.location.pathname.split('/').filter(Boolean);
+          var projectName = pathSegments[0] || 'LUVSIC';
+          if (!/^[A-Za-z0-9_.-]+$/.test(projectName)) projectName = 'LUVSIC';
+
+          var correctPath = '/' + projectName + '/';
+          var search = window.location.search || '';
+          var hash = window.location.hash || '';
+          var target = window.location.origin + correctPath + search + hash;
+          try {
+            window.location.replace(target);
+          } catch (e2) {
+            window.location.href = target;
+          }
+        } catch (e3) {
+          // 最后兜底：最不济也跳回 LUVSIC 根，不留在 404 白页
+          try {
+            window.location.href = window.location.origin + '/LUVSIC/';
+          } catch (_) {}
         }
       })();
     </script>
