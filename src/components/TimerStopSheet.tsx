@@ -43,6 +43,7 @@ export default function TimerStopSheet() {
       forms: timer.forms,
       tools: timer.tools,
       note: note.trim() || undefined,
+      isTimerEntry: true, // 计时按钮来的 —— 真实时长，计入排行榜
     });
     toast("已保存记录", "success");
     setSaving(false);

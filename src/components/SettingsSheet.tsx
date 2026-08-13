@@ -6,18 +6,31 @@ import {
   Pencil,
   Check,
   FileSpreadsheet,
+  FileJson,
   Eye,
   EyeOff,
   Cloud,
   RefreshCw,
   Download,
+  Users,
+  Search,
+  BarChart3,
 } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useRecordStore } from "@/store/useRecordStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { toast } from "@/store/useToastStore";
 import { exportRecordsXls } from "@/lib/exportExcel";
 import { uploadToCloud, downloadFromCloud, getCloudRecordCount } from "@/lib/sync";
+import {
+  startAutoSync,
+  triggerAutoSync,
+  getAutoSyncStatus,
+  getAutoSyncError,
+  onAutoSyncStatusChange,
+  type AutoSyncStatus,
+} from "@/lib/autoSync";
 import { APP_VERSION, checkUpdate, type VersionInfo } from "@/config/appVersion";
 import DonateSheet from "@/components/DonateSheet";
 import { cn, isValidPin, sha256Hex } from "@/lib/utils";
@@ -37,6 +50,14 @@ export default function SettingsSheet() {
   const lock = useRecordStore((s) => s.settings.lock);
   const setLock = useRecordStore((s) => s.setLock);
   const records = useRecordStore((s) => s.records);
+
+  // 社交隐私
+  const searchable = useProfileStore((s) => s.searchable);
+  const showAgg = useProfileStore((s) => s.showAggregatesToFriends);
+  const setSearchable = useProfileStore((s) => s.setSearchable);
+  const setShowAggregates = useProfileStore((s) => s.setShowAggregatesToFriends);
+  // 本地改动的 privacy 是否需要「点同步到云端」提示（和上传到云端一起），这里不拦截，
+  // 用户下次按「上传到云端」就会自然同步。操作时给个提示即可。
 
   const [stage, setStage] = useState<PinStage>("idle");
 
@@ -183,6 +204,24 @@ export default function SettingsSheet() {
     }
     exportRecordsXls(records);
     toast(`已导出 ${records.length} 条记录到 Excel`, "success");
+  };
+
+  const handleExportJson = () => {
+    if (records.length === 0) {
+      toast("暂无记录可导出", "warn");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(records, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const date = new Date().toISOString().slice(0, 10);
+    a.download = `zwba-backup-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`已导出 ${records.length} 条记录到 JSON`, "success");
   };
 
   if (!open) return null;
@@ -353,22 +392,72 @@ export default function SettingsSheet() {
             <CloudSyncCard />
           </section>
 
-          {/* 数据导出（Excel） */}
+          {/* 数据导出（Excel + JSON） */}
           <section>
             <div className="label-eyebrow mb-2.5">数据 · 导出</div>
             <div className="rounded-xl border border-line bg-ink-900/60 p-4">
               <p className="mb-3 text-xs leading-relaxed text-muted">
-                将所有记录一键导出为 Excel 文件（.xls），可在 Excel / WPS / 表格 App 中打开。
+                导出记录用于备份或迁移。Excel 适合查看，JSON 适合恢复导入。
               </p>
-              <button
-                onClick={handleExportXls}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow border border-line"
-              >
-                <FileSpreadsheet size={15} />
-                导出 Excel
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={handleExportXls}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow border border-line"
+                >
+                  <FileSpreadsheet size={15} />
+                  导出 Excel
+                </button>
+                <button
+                  onClick={handleExportJson}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow border border-line"
+                >
+                  <FileJson size={15} />
+                  导出 JSON 备份
+                </button>
+              </div>
               <p className="mt-3 text-[11px] text-muted/80">
                 共 {records.length} 条记录可导出
+              </p>
+            </div>
+          </section>
+
+          {/* 社交隐私 */}
+          <section>
+            <div className="label-eyebrow mb-2.5">社交 · 隐私</div>
+            <div className="space-y-3 rounded-xl border border-line bg-ink-900/60 p-4">
+              <PrivacyToggle
+                icon={<Search size={18} />}
+                title="允许通过昵称被搜索"
+                desc={
+                  searchable
+                    ? "其他人能通过昵称搜到你"
+                    : "关闭后将无法被任何搜索结果匹配"
+                }
+                checked={searchable}
+                onChange={(v) => {
+                  setSearchable(v);
+                  toast(v ? "已允许被搜索" : "已关闭被搜索", "success");
+                }}
+                accent="teal"
+              />
+              <PrivacyToggle
+                icon={<BarChart3 size={18} />}
+                title="好友可查看我的统计概览"
+                desc={
+                  showAgg
+                    ? "好友能在排行榜看到你的总次数/总时长等聚合数字"
+                    : "好友只能看到昵称和头像"
+                }
+                checked={showAgg}
+                onChange={(v) => {
+                  setShowAggregates(v);
+                  toast(v ? "已允许好友查看统计" : "已隐藏统计概览", "success");
+                }}
+                accent="violet"
+              />
+              <p className="pt-1 text-[11px] leading-relaxed text-muted/80">
+                <Users size={11} className="-mt-0.5 mr-1 inline" />
+                改完别忘了在上方「云端 · 同步」点「上传到云端」，否则隐私设置只保存在本机。
               </p>
             </div>
           </section>
@@ -482,6 +571,57 @@ function PinRow({ label, value, onChange, show, onToggle, mismatch }: PinRowProp
   );
 }
 
+/** 隐私开关行（复用密码锁的 switch 样式） */
+interface PrivacyToggleProps {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  accent?: "amber" | "teal" | "violet";
+}
+export function PrivacyToggle({ icon, title, desc, checked, onChange, accent = "amber" }: PrivacyToggleProps) {
+  const accentBg: Record<string, string> = {
+    amber: "bg-amber/15 text-amber-glow",
+    teal: "bg-teal-500/15 text-teal-300",
+    violet: "bg-violet-500/15 text-violet-300",
+  };
+  const accentSwitch: Record<string, string> = {
+    amber: "bg-amber",
+    teal: "bg-teal-500",
+    violet: "bg-violet-500",
+  };
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", accentBg[accent])}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm text-cream">{title}</div>
+          <div className="text-xs leading-relaxed text-muted">{desc}</div>
+        </div>
+      </div>
+      <button
+        onClick={() => onChange(!checked)}
+        role="switch"
+        aria-checked={checked}
+        className={cn(
+          "relative h-7 w-12 shrink-0 appearance-none rounded-full border-0 p-0 transition-colors",
+          checked ? accentSwitch[accent] : "bg-ink-700",
+        )}
+      >
+        <span
+          className={cn(
+            "absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
+            checked ? "translate-x-5" : "translate-x-0",
+          )}
+        />
+      </button>
+    </div>
+  );
+}
+
 /** 更新弹窗 */
 function UpdateDialog({
   info,
@@ -574,7 +714,7 @@ function ConfirmDialog({
 }
 
 /** 云同步卡片：未登录 → 登录按钮；已登录 → 上传/下载按钮 */
-function CloudSyncCard() {
+export function CloudSyncCard() {
   const user = useAuthStore((s) => s.user);
   const session = useAuthStore((s) => s.session);
   const signOut = useAuthStore((s) => s.signOut);
@@ -583,6 +723,13 @@ function CloudSyncCard() {
   const [loading, setLoading] = useState(false);
   const [cloudCount, setCloudCount] = useState<number | null>(null);
   const records = useRecordStore((s) => s.records);
+  const [autoStatus, setAutoStatus] = useState<AutoSyncStatus>(getAutoSyncStatus());
+
+  // 监听自动同步状态变化
+  useEffect(() => {
+    startAutoSync();
+    return onAutoSyncStatusChange(setAutoStatus);
+  }, []);
 
   // 登录后 / 操作完成后刷新云端记录数
   const refreshCloudCount = async () => {
@@ -663,25 +810,67 @@ function CloudSyncCard() {
     <>
       <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
         <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
-            <Cloud size={18} />
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+            <Cloud size={18} className={cn(
+              autoStatus === "syncing" && "animate-spin",
+              autoStatus === "waiting" && "opacity-70",
+              autoStatus === "error" && "text-rose-300",
+            )} />
+            <span className={cn(
+              "absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-ink-900",
+              autoStatus === "synced"  && "bg-emerald-400",
+              autoStatus === "syncing" && "bg-amber animate-pulse",
+              autoStatus === "waiting" && "bg-amber/70",
+              autoStatus === "error"   && "bg-rose-400",
+              autoStatus === "idle"    && "bg-emerald-400/60",
+            )} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm text-cream">已连接云端</div>
+            <div className="flex items-center gap-1.5 text-sm text-cream">
+              已连接云端
+              <AutoStatusBadge status={autoStatus} />
+            </div>
             <div className="truncate text-xs text-muted">{user.email}</div>
           </div>
         </div>
+        {autoStatus === "error" && (
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2">
+            <div className="truncate text-[11px] text-rose-200">
+              自动同步失败：{getAutoSyncError() || "未知错误"}
+            </div>
+            <button
+              onClick={() => triggerAutoSync({ full: false })}
+              className="shrink-0 rounded-md bg-rose-500/15 px-2 py-1 text-[10px] font-medium text-rose-200 ring-1 ring-rose-500/30 hover:bg-rose-500/25"
+            >
+              重试
+            </button>
+          </div>
+        )}
         <div className="mb-3 flex items-center justify-between text-xs text-muted">
           <span>本地 {records.length} 条记录</span>
           <span>云端 {cloudCount !== null ? `${cloudCount} 条` : "…"}</span>
         </div>
+        <div className="mb-3 rounded-xl border border-dashed border-emerald-500/25 bg-emerald-500/5 p-2.5">
+          <div className="flex items-center gap-2 text-[11px] text-emerald-200/90">
+            <RefreshCw size={12} />
+            <span>修改记录 / 设置 / 资料后 1.5 秒自动同步到云端</span>
+          </div>
+        </div>
         <div className="space-y-2">
           <button
-            onClick={() => setConfirm("upload")}
+            onClick={() => triggerAutoSync({ full: false })}
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2.5 text-sm text-emerald-300 transition-colors hover:bg-emerald-500/25 disabled:opacity-60"
           >
-            {loading ? "处理中…" : "上传到云端"}
+            <RefreshCw size={14} />
+            {loading ? "处理中…" : "立即同步（增量）"}
+          </button>
+          <button
+            onClick={() => setConfirm("upload")}
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-emerald-500/40 hover:text-emerald-300 disabled:opacity-60"
+          >
+            {loading ? "处理中…" : "强制覆盖上传"}
           </button>
           <button
             onClick={() => setConfirm("download")}
@@ -731,5 +920,21 @@ function CloudSyncCard() {
         />
       )}
     </>
+  );
+}
+
+function AutoStatusBadge({ status }: { status: AutoSyncStatus }) {
+  const cfg: Record<AutoSyncStatus, { text: string; cls: string }> = {
+    idle:    { text: "空闲",    cls: "bg-ink-800 text-muted ring-1 ring-line/60" },
+    waiting: { text: "等待中",  cls: "bg-amber/15 text-amber-glow ring-1 ring-amber/30" },
+    syncing: { text: "同步中",  cls: "bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30" },
+    synced:  { text: "已同步",  cls: "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/30" },
+    error:   { text: "失败",    cls: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30" },
+  };
+  const c = cfg[status];
+  return (
+    <span className={cn("rounded-full px-1.5 py-0.5 text-[9px] font-medium", c.cls)}>
+      {c.text}
+    </span>
   );
 }

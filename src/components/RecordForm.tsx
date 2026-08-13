@@ -106,19 +106,28 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
       return;
     }
     const dur = Math.max(0, Math.round(duration * 60) / 60); // 保留到秒精度
+    // RecordForm = 手动补录表单 → isTimerEntry 固定 false
     const payload = {
       timestamp: ts,
       duration: dur,
       forms: selectedForms,
       tools: selectedTools,
       note: note.trim() || undefined,
+      isTimerEntry: false,
     };
     if (editing) {
-      updateRecord(editing.id, payload);
+      // 编辑时不修改 isTimerEntry（保留原始来源标记）
+      updateRecord(editing.id, {
+        timestamp: payload.timestamp,
+        duration: payload.duration,
+        forms: payload.forms,
+        tools: payload.tools,
+        note: payload.note,
+      });
       toast("已更新记录", "success");
     } else {
       addRecord(payload);
-      toast("已记录一次", "success");
+      toast("已记录（补录，不计入排行榜）", "success");
     }
     onDone();
   };

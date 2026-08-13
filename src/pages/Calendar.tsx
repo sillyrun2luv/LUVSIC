@@ -443,11 +443,15 @@ function DayDetailDrawer({
 }) {
   const date = new Date(dayTs);
   return (
-    <div className="fixed inset-0 z-[100]">
-      <div className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="absolute inset-x-0 bottom-0 max-h-[85dvh] animate-slideInUp overflow-hidden rounded-t-3xl border-t border-line/70 bg-ink-900/98 backdrop-blur-md">
-        <div className="flex h-full max-h-[85dvh] flex-col">
-          <div className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-5">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center">
+      <div
+        className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="surface relative z-10 w-full max-w-2xl max-h-[85dvh] flex flex-col overflow-hidden animate-slideUp rounded-t-3xl border-t border-line/70 bg-ink-900/98 backdrop-blur-md">
+        {/* 头部：不滚动区域 */}
+        <div className="shrink-0 px-5 pt-5">
+          <div className="mx-auto w-full max-w-2xl">
             <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line" />
             <header className="mb-4 flex items-end justify-between">
               <div>
@@ -461,13 +465,20 @@ function DayDetailDrawer({
                 关闭
               </button>
             </header>
-
-            <div className="mb-5 grid grid-cols-3 gap-2">
+            <div className="mb-4 grid grid-cols-3 gap-2">
               <Stat label="次数" value={info.count} unit="次" />
               <Stat label="总时长" value={info.totalMinutes >= 1 ? `${Math.round(info.totalMinutes)}` : "0"} unit={info.totalMinutes >= 1 ? "分" : ""} />
               <Stat label="平均" value={info.count ? `${Math.round(info.totalMinutes / info.count)}` : "0"} unit={info.count ? "分" : ""} />
             </div>
+          </div>
+        </div>
 
+        {/* 列表区：可独立滚动 */}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] touch-pan-y"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <div className="mx-auto w-full max-w-2xl">
             {records.length === 0 ? (
               <div className="py-10 text-center">
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-line text-muted">
@@ -478,39 +489,39 @@ function DayDetailDrawer({
             ) : (
               <div className="space-y-2 pb-2">
                 {records.map((r, i) => (
-                <button
-                  key={r.id}
-                  onClick={() => onRecordClick(r.id)}
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-line/60 bg-ink-800/60 p-3 text-left transition-all hover:border-amber/40 hover:bg-ink-800"
-                >
-                  <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-amber/10 text-amber-glow ring-1 ring-amber/20">
-                    <span className="text-[10px] text-muted">第</span>
-                    <span className="text-sm font-semibold leading-none">{i + 1}</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-display text-cream">{formatTime(r.timestamp)}</span>
-                      <span className="text-xs text-muted">
-                        {r.duration >= 1 ? `${Math.round(r.duration * 10) / 10} 分钟` : ""}
-                      </span>
+                  <button
+                    key={r.id}
+                    onClick={() => onRecordClick(r.id)}
+                    className="group flex w-full items-center gap-3 rounded-2xl border border-line/60 bg-ink-800/60 p-3 text-left transition-all hover:border-amber/40 hover:bg-ink-800"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-amber/10 text-amber-glow ring-1 ring-amber/20">
+                      <span className="text-[10px] text-muted">第</span>
+                      <span className="text-sm font-semibold leading-none">{i + 1}</span>
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1">
-                      {r.forms.slice(0, 2).map((f) => (
-                        <span key={f} className="rounded-full bg-ink-700 px-2 py-0.5 text-[10px] text-mist">{f}</span>
-                      ))}
-                      {r.tools.slice(0, 2).map((t) => (
-                        <span key={t} className="rounded-full bg-ink-700 px-2 py-0.5 text-[10px] text-muted">{t}</span>
-                      ))}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-display text-cream">{formatTime(r.timestamp)}</span>
+                        <span className="text-xs text-muted">
+                          {r.duration >= 1 ? `${Math.round(r.duration * 10) / 10} 分钟` : ""}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        {r.forms.slice(0, 2).map((f) => (
+                          <span key={f} className="rounded-full bg-ink-700 px-2 py-0.5 text-[10px] text-mist">{f}</span>
+                        ))}
+                        {r.tools.slice(0, 2).map((t) => (
+                          <span key={t} className="rounded-full bg-ink-700 px-2 py-0.5 text-[10px] text-muted">{t}</span>
+                        ))}
+                      </div>
+                      {r.note && (
+                        <p className="mt-1 truncate text-xs text-muted/80">{r.note}</p>
+                      )}
                     </div>
-                    {r.note && (
-                      <p className="mt-1 truncate text-xs text-muted/80">{r.note}</p>
-                    )}
-                  </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted opacity-0 transition-opacity group-hover:opacity-100"><path d="m9 18 6-6-6-6" /></svg>
-                </button>
-              ))}
-            </div>
-          )}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted opacity-0 transition-opacity group-hover:opacity-100"><path d="m9 18 6-6-6-6" /></svg>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

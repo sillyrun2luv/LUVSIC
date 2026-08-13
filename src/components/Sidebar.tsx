@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { X, Check, Pencil, LayoutDashboard, NotebookPen, History, LineChart, Settings, Calendar } from "lucide-react";
+import { X, Check, Pencil, LayoutDashboard, NotebookPen, Settings, Users, UserCircle } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useProfileStore, AVATAR_OPTIONS } from "@/store/useProfileStore";
 import { useThemeStore, THEMES } from "@/store/useThemeStore";
 import { useRecordStore } from "@/store/useRecordStore";
+import { useFriendStore } from "@/store/useFriendStore";
 import { streakDays } from "@/lib/stats";
 import { greeting } from "@/lib/date";
 import type { ViewKey } from "@/types";
 import { cn } from "@/lib/utils";
+import Avatar, { buildTextAvatar, avatarKind } from "./Avatar";
+import { toast } from "@/store/useToastStore";
 
 const NAV_ITEMS: {
   key: ViewKey;
@@ -15,6 +18,7 @@ const NAV_ITEMS: {
   icon: typeof LayoutDashboard;
   activeCls: string;
   idleCls: string;
+  badge?: boolean;
 }[] = [
   {
     key: "overview",
@@ -24,13 +28,6 @@ const NAV_ITEMS: {
     idleCls: "text-sky-400/80 hover:bg-sky-500/10 hover:text-sky-300",
   },
   {
-    key: "calendar",
-    label: "日历",
-    icon: Calendar,
-    activeCls: "bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-500/30",
-    idleCls: "text-cyan-400/80 hover:bg-cyan-500/10 hover:text-cyan-300",
-  },
-  {
     key: "record",
     label: "记录",
     icon: NotebookPen,
@@ -38,18 +35,19 @@ const NAV_ITEMS: {
     idleCls: "text-amber-glow/80 hover:bg-amber/10 hover:text-amber-glow",
   },
   {
-    key: "history",
-    label: "历史",
-    icon: History,
-    activeCls: "bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/30",
-    idleCls: "text-violet-400/80 hover:bg-violet-500/10 hover:text-violet-300",
+    key: "friends",
+    label: "好友",
+    icon: Users,
+    activeCls: "bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/30",
+    idleCls: "text-teal-400/80 hover:bg-teal-500/10 hover:text-teal-300",
+    badge: true,
   },
   {
-    key: "insights",
-    label: "洞察",
-    icon: LineChart,
-    activeCls: "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30",
-    idleCls: "text-emerald-400/80 hover:bg-emerald-500/10 hover:text-emerald-300",
+    key: "profile",
+    label: "我的",
+    icon: UserCircle,
+    activeCls: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30",
+    idleCls: "text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-300",
   },
 ];
 
@@ -72,6 +70,7 @@ export default function Sidebar() {
 
   const records = useRecordStore((s) => s.records);
   const streak = streakDays(records);
+  const pendingCount = useFriendStore((s) => s.pendingCount);
 
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(name);
@@ -122,10 +121,10 @@ export default function Sidebar() {
           <div className="mb-3 flex items-start justify-between">
             <button
               onClick={() => setShowAvatars((v) => !v)}
-              className="flex h-16 w-16 items-center justify-center rounded-full border border-amber/40 bg-amber/10 text-3xl shadow-glow transition-transform hover:scale-105"
+              className="shrink-0 rounded-full border border-amber/40 bg-amber/10 shadow-glow transition-transform hover:scale-105"
               aria-label="更换头像"
             >
-              {avatar}
+              <Avatar value={avatar} size={64} emojiScale={0.5} ringClass="ring-0 border-0" />
             </button>
             <button
               onClick={closeSidebar}
@@ -179,30 +178,56 @@ export default function Sidebar() {
 
           {/* 头像选择 */}
           {showAvatars && (
-            <div className="mt-3 grid grid-cols-8 gap-1.5 rounded-xl border border-line bg-ink-850/80 p-2.5">
-              {AVATAR_OPTIONS.map((a) => (
+            <div className="mt-3 rounded-xl border border-line bg-ink-850/80 p-2.5">
+              <div className="mb-2 flex items-center justify-between px-1">
+                <div className="text-[11px] text-muted">选表情头像 · 共 {AVATAR_OPTIONS.length} 个</div>
                 <button
-                  key={a}
                   onClick={() => {
-                    setAvatar(a);
+                    const t = buildTextAvatar(name || "我");
+                    setAvatar(t);
                     setShowAvatars(false);
+                    toast("已切换为昵称首字渐变头像", "success");
                   }}
-                  className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-colors",
-                    a === avatar ? "bg-amber/20 ring-1 ring-amber/60" : "hover:bg-ink-700",
-                  )}
+                  className="flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[11px] text-violet-200 ring-1 ring-violet-500/30 hover:bg-violet-500/25"
                 >
-                  {a}
+                  <Avatar value={buildTextAvatar(name || "我")} size={14} ringClass="ring-0" emojiScale={0.85} />
+                  用昵称首字生成
                 </button>
-              ))}
+              </div>
+              <div className="grid grid-cols-9 gap-1.5">
+                {AVATAR_OPTIONS.map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => {
+                      setAvatar(a);
+                      setShowAvatars(false);
+                    }}
+                    className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-colors",
+                      a === avatar ? "bg-amber/20 ring-1 ring-amber/60" : "hover:bg-ink-700",
+                    )}
+                  >
+                    {a}
+                  </button>
+                ))}
+                {avatarKind(avatar) === "text" && (
+                  <div
+                    title="当前：首字母渐变"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber/20 ring-1 ring-amber/60"
+                  >
+                    <Avatar value={avatar} size={24} ringClass="ring-0" />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
 
         {/* 导航 */}
         <nav className="flex-1 space-y-1.5 p-3">
-          {NAV_ITEMS.map(({ key, label, icon: Icon, activeCls, idleCls }) => {
+          {NAV_ITEMS.map(({ key, label, icon: Icon, activeCls, idleCls, badge }) => {
             const active = view === key;
+            const showBadge = badge && pendingCount > 0;
             return (
               <button
                 key={key}
@@ -212,7 +237,14 @@ export default function Sidebar() {
                   active ? activeCls : idleCls,
                 )}
               >
-                <Icon size={20} strokeWidth={1.8} />
+                <div className="relative">
+                  <Icon size={20} strokeWidth={1.8} />
+                  {showBadge && (
+                    <span className="absolute -right-2 -top-1 min-w-[16px] h-4 rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white ring-2 ring-ink-900 flex items-center justify-center">
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </span>
+                  )}
+                </div>
                 {label}
               </button>
             );

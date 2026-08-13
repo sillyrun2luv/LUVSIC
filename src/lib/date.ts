@@ -103,9 +103,9 @@ export function fromDatetimeLocalValue(v: string): number {
   return new Date(v).getTime();
 }
 
-/** 把分钟时长格式化为可读：1小时20分 / 45分 / 30秒 / 刚刚 */
+/** 把分钟时长格式化为可读：1小时20分 / 45分 / 30秒 / 无 */
 export function formatDuration(minutes: number): string {
-  if (!minutes || minutes <= 0) return "刚刚";
+  if (!minutes || minutes <= 0) return "无";
   const totalSec = Math.round(minutes * 60);
   if (totalSec < 60) return `${totalSec}秒`;
   const h = Math.floor(totalSec / 3600);
