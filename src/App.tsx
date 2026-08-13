@@ -23,6 +23,7 @@ import FloatingTimer from "@/components/FloatingTimer";
 import TimerStartSheet from "@/components/TimerStartSheet";
 import TimerStopSheet from "@/components/TimerStopSheet";
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
+import AuthCallbackOverlay from "@/components/AuthCallbackOverlay";
 import { useNotification } from "@/hooks/useNotification";
 import { startAutoSync } from "@/lib/autoSync";
 
@@ -104,6 +105,7 @@ export default function App() {
       <TimerStopSheet />
       <PWAUpdatePrompt />
       <Toaster />
+      <AuthCallbackOverlay />
     </div>
   );
 }

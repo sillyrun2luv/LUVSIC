@@ -32,6 +32,7 @@ import {
   type AutoSyncStatus,
 } from "@/lib/autoSync";
 import { APP_VERSION, checkUpdate, type VersionInfo } from "@/config/appVersion";
+import { Capacitor } from "@capacitor/core";
 import DonateSheet from "@/components/DonateSheet";
 import { cn, isValidPin, sha256Hex } from "@/lib/utils";
 
@@ -657,15 +658,18 @@ function UpdateDialog({
           >
             稍后
           </button>
-          <a
-            href={info.apkUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => {
+              // APK 环境：用系统浏览器打开，避免 WebView 内部加载 GitHub 下载链接时 404
+              // 浏览器环境：新标签页打开
+              const target = Capacitor.isNativePlatform() ? "_system" : "_blank";
+              window.open(info.apkUrl, target, "noopener,noreferrer");
+            }}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber px-4 py-2.5 text-sm text-ink-950 transition-colors hover:bg-amber-glow"
           >
             <Download size={15} />
             下载更新
-          </a>
+          </button>
         </div>
       </div>
     </div>

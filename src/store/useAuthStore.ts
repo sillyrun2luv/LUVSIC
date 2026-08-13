@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { ensureProfile } from "@/lib/sync";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useRecordStore } from "@/store/useRecordStore";
+import { useUIStore } from "@/store/useUIStore";
 
 interface AuthState {
   ready: boolean; // 初始化完成
@@ -236,16 +237,69 @@ export const useAuthStore = create<AuthState>((set, get) => ({
  * 在 App.tsx 中调用一次。
  */
 export function initAuth() {
-  supabase.auth.getSession().then(({ data }) => {
+  // 1) 检查 URL hash 是否来自邮件验证/重置密码/魔法登录
+  //    典型形式：#access_token=xxx&expires_in=3600&refresh_token=yyy&token_type=bearer&type=signup|recovery|invite|magiclink
+  const rawHash = window.location.hash?.slice(1) ?? "";
+  const hasAuthTokens =
+    /[#&?]access_token=/.test(window.location.href) ||
+    /^access_token=/.test(rawHash) ||
+    rawHash.includes("access_token=");
+
+  if (hasAuthTokens) {
+    // 先把 UI 切到"处理中"，覆盖住 404 / 空白页的观感
+    useUIStore.getState().setAuthCallback({
+      stage: "processing",
+      message: "正在验证邮箱，请稍候…",
+    });
+
+    // 用户点邮件里的 ConfirmationURL 跳回时，hash 里携带了 access_token
+    // Supabase JS SDK 的 getSession() / onAuthStateChange() 默认会解析 URL hash 中的 token
+    // 所以我们直接等待 SDK 内部处理后拿到结果即可。
+  }
+
+  supabase.auth.getSession().then(({ data, error: getSessionError }) => {
+    const s = data.session;
     useAuthStore.setState({
-      session: data.session,
-      user: data.session?.user ?? null,
+      session: s,
+      user: s?.user ?? null,
       ready: true,
     });
     // 已有 session（如刷新页面恢复登录态），也确保 profile
-    if (data.session?.user?.id) {
-      ensureProfile(data.session.user.id).catch((e) => console.warn("[ensureProfile]", e));
-      subscribeProfile(data.session.user.id);
+    if (s?.user?.id) {
+      ensureProfile(s.user.id).catch((e) => console.warn("[ensureProfile]", e));
+      subscribeProfile(s.user.id);
+    }
+
+    if (hasAuthTokens) {
+      // 从邮件链接进来的回调：按 type 判定是 signup 验证还是 重置密码 recovery
+      const params = new URLSearchParams(rawHash);
+      const type = params.get("type");
+      if (getSessionError || !s) {
+        useUIStore.getState().setAuthCallback({
+          stage: "error",
+          message: getSessionError?.message || "验证失败，链接可能已过期，请重新发送验证邮件",
+        });
+      } else if (type === "recovery") {
+        useUIStore.getState().setAuthCallback({
+          stage: "recovery",
+          message: "密码重置链接已生效，请在设置中修改密码",
+        });
+      } else {
+        // signup / invite / magiclink 成功
+        useUIStore.getState().setAuthCallback({
+          stage: "verified",
+          message: s.user?.email
+            ? `${s.user.email} 邮箱已验证成功，现在可以登录啦`
+            : "邮箱已验证成功，现在可以登录啦",
+        });
+      }
+      // 清掉 URL hash，避免刷新页面再次触发
+      try {
+        const clean = window.location.pathname + window.location.search;
+        window.history.replaceState(null, "", clean);
+      } catch {
+        // ignore
+      }
     }
   });
 

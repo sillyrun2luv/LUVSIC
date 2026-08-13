@@ -1,5 +1,5 @@
 {
   "version": "1.1.0",
-  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.1.0/ziweiba.apk",
+  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.1.0/ziweiba-v1.1.0-debug.apk",
   "notes": "v1.1 更新：1) 昵称唯一性校验，防止重名；2) 强制注册邮箱验证；3) 排行榜仅统计计时按钮记录，补录不计入；4) 记录页面放大计时按钮，折叠补录功能；5) 新增删除账号功能；6) 支持数据导出JSON；7) 好友PK功能（总时长&近100h时长）；8) 自定义头像：扩展36个emoji + 首字母渐变头像；9) 自动云同步数据；10) 修复删除按钮无反应问题。"
 }

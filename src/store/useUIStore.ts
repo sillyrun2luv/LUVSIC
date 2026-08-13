@@ -48,6 +48,12 @@ interface UIState {
   // 密码锁：本次会话是否已验证通过
   lockVerified: boolean;
 
+  // 邮箱验证 / 重置密码回调阶段（从邮件链接带 hash 进入时触发）
+  authCallback: null | {
+    stage: "processing" | "verified" | "recovery" | "error";
+    message?: string;
+  };
+
   setView: (v: ViewKey) => void;
   goRecord: (editingId?: string | null) => void;
 
@@ -73,6 +79,9 @@ interface UIState {
   closeDetail: () => void;
 
   setLockVerified: (v: boolean) => void;
+
+  setAuthCallback: (v: UIState["authCallback"]) => void;
+  closeAuthCallback: () => void;
 
   openTimerStart: () => void;
   closeTimerStart: () => void;
@@ -106,6 +115,7 @@ export const useUIStore = create<UIState>((set) => ({
   pkAvatar: "🌙",
   detailRecordId: null,
   lockVerified: false,
+  authCallback: null,
 
   setView: (v) => set({ view: v, editingId: null }),
   goRecord: (editingId = null) => set({ view: "record", editingId }),
@@ -152,6 +162,9 @@ export const useUIStore = create<UIState>((set) => ({
   closeDetail: () => set({ detailRecordId: null }),
 
   setLockVerified: (v) => set({ lockVerified: v }),
+
+  setAuthCallback: (v) => set({ authCallback: v }),
+  closeAuthCallback: () => set({ authCallback: null }),
 
   openTimerStart: () => set({ showTimerStart: true }),
   closeTimerStart: () => set({ showTimerStart: false }),
