@@ -13,6 +13,67 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="description" content="自卫吧 — 一本私密的节律日记。记录、觉察、与自己的身体好好相处。" />
     <title>自卫吧 · 节律日记</title>
+    <script>
+      // --------------------------------------------------------------
+      // 防御脚本：任何 React/Supabase SDK 之前先执行
+      //
+      // 目标：解决"邮件验证链接点进去 404"的几个典型根因：
+      //   1) GitHub Pages Project Pages (base="/LUVSIC/")
+      //      pathname 无尾斜杠时 Pages 会当作文件查找，返回 404.html，
+      //      404 fallback 虽然会把页面重定向到 /LUVSIC/，但某些客户端
+      //      （WeChat/QQ/手机自带邮件内置浏览器）在 302 / replace 后会
+      //      丢失 URL hash，导致 Supabase 无法验证 token。
+      //   2) 邮件客户端"安全链接重写"（SafeLinks 等）把 hash 当普通查询
+      //      导致参数错乱。
+      //
+      // 策略：
+      //   - 先把 access_token hash 备份到 sessionStorage（key=luvsic.authHash）
+      //   - 若 pathname 不是以 /LUVSIC/ 结尾，重定向到带尾斜杠的正确路径
+      //   - 重定向后，用 sessionStorage 中的备份恢复 hash（以防 redirect 期间丢失）
+      // --------------------------------------------------------------
+      (function () {
+        try {
+          var RAW_HASH = window.location.hash || '';
+          var HAS_ACCESS_TOKEN =
+            /access_token=/.test(window.location.href) || /^#?access_token=/.test(RAW_HASH);
+          if (HAS_ACCESS_TOKEN) {
+            // 保留整串 hash，含 leading "#"；如果没有 # 就加上
+            var normalized = RAW_HASH.charAt(0) === '#' ? RAW_HASH : '#' + RAW_HASH;
+            window.sessionStorage.setItem('luvsic.authHash', normalized);
+            window.sessionStorage.setItem('luvsic.authHashAt', String(Date.now()));
+          } else {
+            // 没有 inline hash，看看 session 里有没有未消费的备份（5 分钟内有效）
+            var backup = window.sessionStorage.getItem('luvsic.authHash');
+            var backupAt = parseInt(window.sessionStorage.getItem('luvsic.authHashAt') || '0', 10);
+            if (backup && backupAt && Date.now() - backupAt < 5 * 60 * 1000) {
+              // 用备份拼到当前 URL，Supabase SDK 就能解析
+              if (window.location.hash !== backup) {
+                var restored = window.location.pathname + window.location.search + backup;
+                window.history.replaceState(null, '', restored);
+              }
+            } else if (backup) {
+              // 过期清掉
+              window.sessionStorage.removeItem('luvsic.authHash');
+              window.sessionStorage.removeItem('luvsic.authHashAt');
+            }
+          }
+
+          // pathname 校正：Project Pages base="/LUVSIC/" 必须带尾斜杠
+          // 只对"明显属于本站"的路径做处理——避免误伤
+          var p = window.location.pathname;
+          // 只校正尾部不是 "/"，且看起来是项目根的情况（/LUVSIC 或 /LUVSIC/xxx 但不带点）
+          if (p.slice(-1) !== '/') {
+            var segs = p.split('/').filter(Boolean);
+            if (segs.length === 1 && /^LUVSIC$/i.test(segs[0])) {
+              var fixed = '/' + segs[0] + '/' + window.location.search + window.location.hash;
+              window.location.replace(window.location.origin + fixed);
+            }
+          }
+        } catch (e) {
+          // 任何错误都静默：绝不阻塞后续 React 加载
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -239,7 +239,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 export function initAuth() {
   // 1) 检查 URL hash 是否来自邮件验证/重置密码/魔法登录
   //    典型形式：#access_token=xxx&expires_in=3600&refresh_token=yyy&token_type=bearer&type=signup|recovery|invite|magiclink
-  const rawHash = window.location.hash?.slice(1) ?? "";
+  let rawHash = window.location.hash?.slice(1) ?? "";
+
+  // 1.5) 双保险：如果 URL 上没带 access_token，但 sessionStorage
+  //     有 index.html 防御脚本暂存的 hash，就恢复它（防止 404 fallback
+  //     重定向/手机邮件客户端吞掉 hash 的情况）。
+  if (
+    !/[#&?]access_token=/.test(window.location.href) &&
+    !/access_token=/.test(rawHash)
+  ) {
+    try {
+      const backup = window.sessionStorage.getItem("luvsic.authHash");
+      const backupAt = parseInt(
+        window.sessionStorage.getItem("luvsic.authHashAt") || "0",
+        10,
+      );
+      const FIVE_MIN = 5 * 60 * 1000;
+      if (backup && backupAt && Date.now() - backupAt < FIVE_MIN) {
+        // 把 hash 写回 URL（replaceState 不触发页面刷新，不丢失已下载资源）
+        const normalized = backup.startsWith("#") ? backup : "#" + backup;
+        const restored =
+          window.location.pathname + window.location.search + normalized;
+        window.history.replaceState(null, "", restored);
+        rawHash = normalized.slice(1);
+        // 消费完即清，避免下一次刷新重复进入"验证中"遮罩
+        window.sessionStorage.removeItem("luvsic.authHash");
+        window.sessionStorage.removeItem("luvsic.authHashAt");
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   const hasAuthTokens =
     /[#&?]access_token=/.test(window.location.href) ||
     /^access_token=/.test(rawHash) ||
@@ -293,10 +324,12 @@ export function initAuth() {
             : "邮箱已验证成功，现在可以登录啦",
         });
       }
-      // 清掉 URL hash，避免刷新页面再次触发
+      // 清掉 URL hash + 备份，避免刷新页面再次触发
       try {
         const clean = window.location.pathname + window.location.search;
         window.history.replaceState(null, "", clean);
+        window.sessionStorage.removeItem("luvsic.authHash");
+        window.sessionStorage.removeItem("luvsic.authHashAt");
       } catch {
         // ignore
       }

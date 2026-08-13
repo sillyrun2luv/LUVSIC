@@ -4,13 +4,35 @@
     <meta charset="utf-8" />
     <title>自卫吧 · 节律日记</title>
     <script>
-      // GitHub Pages SPA fallback: redirect all routes to index.html
-      // The SPA will handle the URL routing
-      location.replace(
-        location.pathname.replace(/\/[^\/]*$/, '/') +
-          location.search +
-          location.hash
-      );
+      // GitHub Pages SPA fallback for Project Pages (base="/LUVSIC/")
+      //
+      // 说明：GitHub Pages 对 Project Pages 有二级路径 base（/LUVSIC/）。
+      // 常见坏场景：
+      //   1) 用户直接访问 /LUVSIC?x=1 或 /LUVSIC#access_token=... （无尾斜杠）
+      //      → 浏览器理解为文件而不是目录，Pages 返回 404.html
+      //   2) 邮件客户端"安全链接重写"后，尾部路径错乱
+      //
+      // 我们的修复：
+      //   - 永远把页面跳回项目的"正确根目录"：${origin}/LUVSIC/#<hash>?<query>
+      //   - base 自动识别：优先用 location.pathname 第二段非空目录作为项目名，
+      //     找不到就回退 LUVSIC，保证不出用户站根 /
+      (function () {
+        var pathSegments = window.location.pathname.split('/').filter(Boolean);
+        var projectName = pathSegments[0] || 'LUVSIC';
+        // 兜底：如果第一段看起来像 LUVSIC 仓库就用它，否则仍用 LUVSIC
+        if (!/^[A-Za-z0-9_.-]+$/.test(projectName)) projectName = 'LUVSIC';
+
+        var correctPath = '/' + projectName + '/';
+        var search = window.location.search || '';
+        var hash = window.location.hash || '';
+        var target = window.location.origin + correctPath + search + hash;
+        try {
+          window.location.replace(target);
+        } catch (e) {
+          // 极端情况降级：用 assign
+          window.location.href = target;
+        }
+      })();
     </script>
   </head>
   <body>
