@@ -11,7 +11,7 @@ export default defineConfig({
     sourcemap: 'hidden',
   },
   plugins: [
-    basicSsl(),
+    // basicSsl(), // 临时禁用 SSL 以便 TRAE 预览
     react({
       babel: {
         plugins: [

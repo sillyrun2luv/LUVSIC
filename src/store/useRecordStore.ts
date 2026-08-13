@@ -74,6 +74,9 @@ interface RecordState {
 
   importData: (records: RecordEntry[]) => void;
   exportData: () => RecordEntry[];
+
+  /** 危险：彻底清空本地记录/设置/预设 + 清 zwba_deleted。删除账户时使用 */
+  resetAll: () => void;
 }
 
 function genId(): string {
@@ -93,7 +96,13 @@ export const useRecordStore = create<RecordState>()(
         set((state) => ({
           records: [
             ...state.records,
-            { ...input, id: genId(), createdAt: Date.now() },
+            {
+              ...input,
+              id: genId(),
+              createdAt: Date.now(),
+              // 默认值：没传时按"补录"处理（false）。计时按钮来源会显式传 true
+              isTimerEntry: input.isTimerEntry ?? false,
+            },
           ],
         })),
 
@@ -195,15 +204,29 @@ export const useRecordStore = create<RecordState>()(
               tools: [...new Set([...tools, ...t2])],
               note: r.note,
               createdAt: r.createdAt || Date.now(),
+              // 旧数据全部按"补录"计（没有计时器来源），用户重新用按钮计时会新建 true 的记录
+              isTimerEntry: Boolean(r.isTimerEntry),
             };
           }),
         }),
 
       exportData: () => get().records,
+
+      resetAll: () => {
+        try {
+          localStorage.removeItem("zwba_deleted");
+        } catch {
+          // 静默
+        }
+        set({
+          records: [],
+          settings: DEFAULT_SETTINGS,
+        });
+      },
     }),
     {
       name: "zwba_store",
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ records: state.records, settings: state.settings }),
       migrate: (persisted: any) => {
@@ -243,9 +266,16 @@ export const useRecordStore = create<RecordState>()(
         // 迁移 records：如果有 materials 字段但没有 forms/tools，则拆分
         const records = Array.isArray(persisted?.records) ? persisted.records : [];
         const migratedRecords = records.map((r: any) => {
-          if (r.forms || r.tools) return r;
-          const { forms, tools } = splitMaterials(r.materials);
-          return { ...r, forms, tools };
+          let rec: any = r;
+          if (!(rec.forms || rec.tools)) {
+            const { forms, tools } = splitMaterials(rec.materials);
+            rec = { ...rec, forms, tools };
+          }
+          // v5：新增 isTimerEntry 字段，旧数据默认 false（补录）
+          if (typeof rec.isTimerEntry !== "boolean") {
+            rec = { ...rec, isTimerEntry: false };
+          }
+          return rec;
         });
 
         return {

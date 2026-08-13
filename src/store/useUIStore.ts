@@ -27,6 +27,21 @@ interface UIState {
   // 认证弹窗
   authOpen: boolean;
 
+  // 资料完善弹窗（首次登录设置昵称头像）
+  profileSetupOpen: boolean;
+
+  // 好友详情弹窗（点击好友头像查看近 N 小时统计）
+  friendDetailOpen: boolean;
+  friendDetailUserId: string | null;
+  friendDetailName: string;
+  friendDetailAvatar: string;
+
+  // PK 弹窗：点击好友头像"PK"按钮弹出
+  pkOpen: boolean;
+  pkUserId: string | null;
+  pkName: string;
+  pkAvatar: string;
+
   // 记录详情弹窗（全局）
   detailRecordId: string | null;
 
@@ -44,6 +59,15 @@ interface UIState {
 
   openAuth: () => void;
   closeAuth: () => void;
+
+  openProfileSetup: () => void;
+  closeProfileSetup: () => void;
+
+  openFriendDetail: (userId: string, name: string, avatar: string) => void;
+  closeFriendDetail: () => void;
+
+  openPK: (userId: string, name: string, avatar: string) => void;
+  closePK: () => void;
 
   openDetail: (id: string) => void;
   closeDetail: () => void;
@@ -71,6 +95,15 @@ export const useUIStore = create<UIState>((set) => ({
   sidebarOpen: false,
   settingsOpen: false,
   authOpen: false,
+  profileSetupOpen: false,
+  friendDetailOpen: false,
+  friendDetailUserId: null,
+  friendDetailName: "",
+  friendDetailAvatar: "🌙",
+  pkOpen: false,
+  pkUserId: null,
+  pkName: "",
+  pkAvatar: "🌙",
   detailRecordId: null,
   lockVerified: false,
 
@@ -85,6 +118,35 @@ export const useUIStore = create<UIState>((set) => ({
 
   openAuth: () => set({ authOpen: true }),
   closeAuth: () => set({ authOpen: false }),
+
+  openProfileSetup: () => set({ profileSetupOpen: true }),
+  closeProfileSetup: () => set({ profileSetupOpen: false }),
+
+  openFriendDetail: (userId, name, avatar) =>
+    set({
+      friendDetailOpen: true,
+      friendDetailUserId: userId,
+      friendDetailName: name,
+      friendDetailAvatar: avatar,
+    }),
+  closeFriendDetail: () =>
+    set({
+      friendDetailOpen: false,
+      friendDetailUserId: null,
+    }),
+
+  openPK: (userId, name, avatar) =>
+    set({
+      pkOpen: true,
+      pkUserId: userId,
+      pkName: name,
+      pkAvatar: avatar,
+    }),
+  closePK: () =>
+    set({
+      pkOpen: false,
+      pkUserId: null,
+    }),
 
   openDetail: (id) => set({ detailRecordId: id }),
   closeDetail: () => set({ detailRecordId: null }),

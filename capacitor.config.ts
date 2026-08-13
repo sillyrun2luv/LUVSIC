@@ -3,7 +3,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.selfdefense.app',
   appName: '自卫吧',
-  webDir: 'dist'
+  webDir: 'dist',
+  version: '1.1.0'
 };
 
 export default config;

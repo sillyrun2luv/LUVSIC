@@ -19,6 +19,7 @@ function toRow(r: RecordEntry, userId: string) {
     note: r.note ?? null,
     created_at: Number(r.createdAt) || 0,
     deleted_at: null,
+    is_timer_entry: Boolean(r.isTimerEntry),
   };
 }
 
@@ -32,6 +33,7 @@ function fromRow(row: any): RecordEntry {
     tools: Array.isArray(row.tools) ? row.tools : [],
     note: row.note ?? undefined,
     createdAt: Number(row.created_at) || 0,
+    isTimerEntry: Boolean(row.is_timer_entry),
   };
 }
 
@@ -99,12 +101,14 @@ export async function uploadToCloud(userId: string) {
       custom_color: customColor,
     });
 
-    // 5. 上传个人资料
-    const { name, avatar } = useProfileStore.getState();
+    // 5. 上传个人资料（含社交隐私设置）
+    const { name, avatar, searchable, showAggregatesToFriends } = useProfileStore.getState();
     await supabase.from("user_profile").upsert({
       user_id: userId,
       name,
       avatar,
+      searchable,
+      show_aggregates_to_friends: showAggregatesToFriends,
     });
 
     // 返回撤销函数
@@ -161,7 +165,7 @@ export async function downloadFromCloud(userId: string) {
       }
     }
 
-    // 5. 下载个人资料
+    // 5. 下载个人资料（含社交隐私设置）
     const { data: remoteProfile } = await supabase
       .from("user_profile")
       .select("*")
@@ -169,8 +173,13 @@ export async function downloadFromCloud(userId: string) {
       .maybeSingle();
 
     if (remoteProfile) {
-      if (remoteProfile.name !== undefined) useProfileStore.getState().setName(remoteProfile.name);
-      if (remoteProfile.avatar !== undefined) useProfileStore.getState().setAvatar(remoteProfile.avatar);
+      // 用 hydrateFromCloud 直接 set，避免反向推送回云端
+      useProfileStore.getState().hydrateFromCloud({
+        name: remoteProfile.name,
+        avatar: remoteProfile.avatar,
+        searchable: remoteProfile.searchable,
+        showAggregatesToFriends: remoteProfile.show_aggregates_to_friends,
+      });
     }
 
     // 返回撤销函数
@@ -186,6 +195,50 @@ export async function downloadFromCloud(userId: string) {
 
 export function isSyncing() {
   return syncing;
+}
+
+/**
+ * 确保用户在 user_profile 表中有记录。
+ * 登录/注册成功后自动调用：
+ *   - 如果没有记录 → 用本地 profile 创建一条（这样别人就能搜到）
+ *   - 如果已有记录 → 把云端数据同步到本地
+ */
+export async function ensureProfile(userId: string) {
+  if (!userId) return;
+
+  const { data, error } = await supabase
+    .from("user_profile")
+    .select("user_id, name, avatar, searchable, show_aggregates_to_friends")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[ensureProfile] SELECT error:", error.message);
+    return;
+  }
+
+  if (!data) {
+    // 不存在 → 创建一条，让用户可被搜索
+    const { name, avatar, searchable, showAggregatesToFriends } = useProfileStore.getState();
+    const { error: insErr } = await supabase.from("user_profile").upsert({
+      user_id: userId,
+      name,
+      avatar,
+      searchable,
+      show_aggregates_to_friends: showAggregatesToFriends,
+    }, { onConflict: "user_id" });
+    if (insErr) {
+      console.warn("[ensureProfile] INSERT error:", insErr.message);
+    }
+  } else {
+    // 已存在 → 同步云端数据到本地（只 set，不反向 push）
+    useProfileStore.getState().hydrateFromCloud({
+      name: data.name,
+      avatar: data.avatar,
+      searchable: data.searchable,
+      showAggregatesToFriends: data.show_aggregates_to_friends,
+    });
+  }
 }
 
 /** 获取云端记录数 */

@@ -7,6 +7,11 @@ export interface RecordEntry {
   tools: string[]; // 辅助道具：手、玩具、其他…
   note?: string; // 备注，可选
   createdAt: number; // 记录创建时间戳
+  /**
+   * true = 计时按钮产生的（真实使用时长，计入排行榜）
+   * false = "记录一次"表单手动补录的（仅本地回看，不上榜）
+   */
+  isTimerEntry: boolean;
 }
 
 export type ReminderMode = "daily" | "weekly" | "interval";
@@ -41,4 +46,33 @@ export interface Settings {
   lock: LockConfig; // 密码锁
 }
 
-export type ViewKey = "overview" | "record" | "history" | "insights" | "calendar";
+export type ViewKey = "overview" | "record" | "friends" | "profile";
+
+// 好友关系状态
+export type FriendshipStatus = "pending" | "accepted" | "rejected" | "cancelled";
+
+export interface Friendship {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  status: FriendshipStatus;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** 搜索 / 列表里显示的其他用户（仅公开信息，不含任何隐私数据） */
+export interface PublicUser {
+  userId: string;
+  name: string;
+  avatar: string;
+  /** 当前登录用户与对方的关系 */
+  relation: "stranger" | "pending_from_me" | "pending_to_me" | "friend" | "self";
+}
+
+/** 用户隐私设置（保存在 user_profile 扩展字段里，云同步） */
+export interface PrivacySettings {
+  /** 是否允许被昵称搜索（默认 true） */
+  searchable: boolean;
+  /** 是否允许好友查看我的聚合统计（总次数/总时长，阶段 2/3 排行榜用） */
+  showAggregatesToFriends: boolean;
+}

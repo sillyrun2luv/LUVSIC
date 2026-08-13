@@ -13,8 +13,34 @@ import StatCard from "@/components/StatCard";
 import SectionTitle from "@/components/SectionTitle";
 import WeekBars from "@/components/charts/WeekBars";
 import RecordItem from "@/components/RecordItem";
+import SubTabs from "@/components/SubTabs";
+import Calendar from "@/pages/Calendar";
+import Insights from "@/pages/Insights";
+
+type SubTab = "home" | "calendar" | "insights";
 
 export default function Overview() {
+  const [subTab, setSubTab] = useState<SubTab>("home");
+
+  return (
+    <div className="animate-fadeIn">
+      <SubTabs
+        value={subTab}
+        onChange={(k) => setSubTab(k as SubTab)}
+        tabs={[
+          { key: "home", label: "总览" },
+          { key: "calendar", label: "日历" },
+          { key: "insights", label: "洞察" },
+        ]}
+      />
+      {subTab === "home" && <HomeContent />}
+      {subTab === "calendar" && <Calendar />}
+      {subTab === "insights" && <Insights />}
+    </div>
+  );
+}
+
+function HomeContent() {
   const records = useRecordStore((s) => s.records);
   const goRecord = useUIStore((s) => s.goRecord);
   const setView = useUIStore((s) => s.setView);
@@ -40,7 +66,7 @@ export default function Overview() {
   const weekTotal = week.reduce((s, d) => s + d.count, 0);
 
   return (
-    <div className="animate-fadeIn space-y-8">
+    <div className="space-y-8">
       {/* 问候 */}
       <header>
         <p className="label-eyebrow mb-2">{formatDateCN(nowDate)}</p>
@@ -114,7 +140,7 @@ export default function Overview() {
           title="最近的片刻"
           extra={
             <button
-              onClick={() => setView("history")}
+              onClick={() => setView("record")}
               className="flex items-center gap-1 text-sm text-amber-dim hover:text-amber-glow"
             >
               <TrendingUp size={14} />
