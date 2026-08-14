@@ -438,7 +438,6 @@ export default function Profile() {
       <section>
         <div className="label-eyebrow mb-3">更多设置</div>
         <div className="surface divide-y divide-line/40 overflow-hidden rounded-2xl">
-          {/* 应用图标切换 */}
           <button
             onClick={() => setShowIconSheet(true)}
             className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-ink-800/50"
@@ -458,16 +457,12 @@ export default function Profile() {
             </div>
             <ChevronRight size={16} className="text-muted" />
           </button>
-
-          {/* 密码锁 */}
           <SettingsRow
             icon={<Lock size={18} />}
             label="密码锁"
             desc="应用启动时需要密码"
             onClick={openSettings}
           />
-
-          {/* 浮动计时按钮开关 */}
           <div className="flex items-center justify-between gap-3 p-4">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-800 text-mist">
@@ -495,32 +490,24 @@ export default function Profile() {
               />
             </button>
           </div>
-
-          {/* 数据导出 */}
           <SettingsRow
             icon={<FileDown size={18} />}
             label="数据导出"
-            desc="导出 Excel / JSON 备份"
+            desc="导出 Excel 备份文件"
             onClick={openSettings}
           />
-
-          {/* 支持作者 */}
           <SettingsRow
             icon={<Heart size={18} />}
             label="支持作者"
             desc="请作者喝杯咖啡"
             onClick={openSettings}
           />
-
-          {/* 关于 */}
           <SettingsRow
             icon={<Info size={18} />}
             label="关于"
             desc="版本信息与更新"
             onClick={openSettings}
           />
-
-          {/* 删除账户 */}
           {isLoggedIn && (
             <button
               onClick={() => setOpenDeleteAccount(true)}
