@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Check, Pencil, Lock, FileDown, Heart, Info, Palette, LogIn, Loader2, UserX } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, Pencil, Lock, FileDown, Heart, Info, Palette, LogIn, Loader2, UserX, Megaphone, ChevronRight } from "lucide-react";
 import { useProfileStore, AVATAR_OPTIONS } from "@/store/useProfileStore";
 import { useThemeStore, THEMES } from "@/store/useThemeStore";
 import { useRecordStore } from "@/store/useRecordStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useAnnouncementStore } from "@/store/useAnnouncementStore";
 import { streakDays } from "@/lib/stats";
 import { greeting } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -38,11 +39,23 @@ export default function Profile() {
   const streak = streakDays(records);
   const g = greeting();
 
+  // 公告
+  const isAnnouncementAdmin = useAnnouncementStore((s) => s.isAdmin);
+  const refreshAnnouncementAdmin = useAnnouncementStore((s) => s.refreshAdmin);
+  const openAnnouncementList = useAnnouncementStore((s) => s.openList);
+  const openAnnouncementAdmin = useAnnouncementStore((s) => s.openAdmin);
+  const activeAnnouncement = useAnnouncementStore((s) => s.activeAnnouncement);
+
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(name);
   const [showAvatars, setShowAvatars] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [openDeleteAccount, setOpenDeleteAccount] = useState(false);
+
+  // 进入"我的"页面时刷新管理员状态
+  useEffect(() => {
+    void refreshAnnouncementAdmin();
+  }, [refreshAnnouncementAdmin]);
 
   const commitName = async () => {
     const trimmed = nameInput.trim();
@@ -220,6 +233,46 @@ export default function Profile() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* 公告 */}
+      <section>
+        <div className="label-eyebrow mb-3">公告</div>
+        <div className="surface divide-y divide-line/40 overflow-hidden rounded-2xl">
+          <button
+            onClick={() => void openAnnouncementList()}
+            className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-ink-800/50"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber/15 text-amber-glow">
+              <Megaphone size={18} />
+            </span>
+            <div className="flex-1">
+              <div className="text-sm font-medium text-cream">公告中心</div>
+              <div className="text-xs text-muted">
+                {activeAnnouncement ? activeAnnouncement.title : "查看所有通知与更新"}
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-muted" />
+          </button>
+
+          {isAnnouncementAdmin && (
+            <button
+              onClick={() => void openAnnouncementAdmin()}
+              className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-amber/5"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber/20 text-amber-glow">
+                <Pencil size={18} />
+              </span>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-cream">公告管理</div>
+                <div className="text-xs text-muted">发布、编辑、上下线公告</div>
+              </div>
+              <span className="rounded-full bg-amber/15 px-2 py-0.5 text-[10px] text-amber-glow ring-1 ring-amber/30">
+                管理员
+              </span>
+            </button>
+          )}
+        </div>
       </section>
 
       {/* 云端同步 */}
