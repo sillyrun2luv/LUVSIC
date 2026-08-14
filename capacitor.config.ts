@@ -4,7 +4,7 @@ const config: CapacitorConfig = {
   appId: 'com.selfdefense.app',
   appName: '自卫吧',
   webDir: 'dist',
-  version: '1.1.0'
+  version: '1.1.1'
 };
 
 export default config;

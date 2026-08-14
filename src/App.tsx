@@ -24,6 +24,8 @@ import TimerStartSheet from "@/components/TimerStartSheet";
 import TimerStopSheet from "@/components/TimerStopSheet";
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
 import AuthCallbackOverlay from "@/components/AuthCallbackOverlay";
+import AnnouncementSheet from "@/components/AnnouncementSheet";
+import { useAnnouncementStore } from "@/store/useAnnouncementStore";
 import { useNotification } from "@/hooks/useNotification";
 import { startAutoSync } from "@/lib/autoSync";
 
@@ -41,7 +43,13 @@ export default function App() {
   const profileSetupDismissedFor = useProfileStore((s) => s.profileSetupDismissedFor);
   const openProfileSetup = useUIStore((s) => s.openProfileSetup);
   const [showSplash, setShowSplash] = useState(true);
+  const fetchAnnouncement = useAnnouncementStore((s) => s.fetchActive);
   useNotification();
+
+  // 启动闪屏结束后拉取公告
+  useEffect(() => {
+    if (!showSplash) fetchAnnouncement();
+  }, [showSplash, fetchAnnouncement]);
 
   // 应用主题：启动时 + 切换时
   useEffect(() => {
@@ -106,6 +114,7 @@ export default function App() {
       <PWAUpdatePrompt />
       <Toaster />
       <AuthCallbackOverlay />
+      <AnnouncementSheet />
     </div>
   );
 }
