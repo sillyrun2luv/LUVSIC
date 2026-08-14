@@ -117,7 +117,9 @@ jobs:
           VERSION=$(jq -r '.version' public/version.json)
           NOTES=$(jq -r '.notes' public/version.json)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "NOTES=$NOTES" >> $GITHUB_OUTPUT
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release and upload APK
         uses: softprops/action-gh-release@v2
