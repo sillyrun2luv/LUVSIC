@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 蘑菇战士自适应图标背景色：取一个匹配蘑菇图的暖奶咖色（原图是透明的，给一个柔和底色） -->
+    <color name="ic_mushroom_launcher_background">#F1DCC2</color>
+</resources>

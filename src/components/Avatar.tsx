@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 
 export const TEXT_AVATAR_PREFIX = "text:";
 export const DATA_URI_PREFIX = "data:image/";
+/** 头像选项里的静态图片：以 / 开头或 http(s):// 开头的视作图片 URL 类型 */
+const IMAGE_PATH_RE = /^(https?:)?\//;
 
 const GRADIENTS: string[] = [
   "from-rose-400 to-pink-500",
@@ -75,6 +77,7 @@ export function avatarKind(v: string): "emoji" | "text" | "image" {
   if (typeof v !== "string") return "emoji";
   if (v.startsWith(TEXT_AVATAR_PREFIX)) return "text";
   if (v.startsWith(DATA_URI_PREFIX)) return "image";
+  if (IMAGE_PATH_RE.test(v)) return "image";
   return "emoji";
 }
 

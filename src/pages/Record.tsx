@@ -5,7 +5,7 @@ import { useUIStore } from "@/store/useUIStore";
 import type { RecordEntry } from "@/types";
 import SubTabs from "@/components/SubTabs";
 import History from "@/pages/History";
-import { Play, Clock, ChevronDown, ChevronUp, Sparkles, Eye } from "lucide-react";
+import { Play, Clock, ChevronDown, ChevronUp, Sparkles, Eye, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatDuration } from "@/lib/date";
@@ -60,6 +60,12 @@ export default function Record() {
               )}
             </h1>
           </header>
+
+          {/* 隐私提示 */}
+          <div className="flex items-center gap-2 rounded-lg border border-line bg-ink-900/40 px-3 py-2 text-[11px] text-muted">
+            <ShieldCheck size={13} className="shrink-0 text-teal/70" />
+            <span>请确认环境隐私且安全</span>
+          </div>
 
           {/* ⭐ 计时卡片（主入口 —— 放最大最显眼） */}
           {!editing && (

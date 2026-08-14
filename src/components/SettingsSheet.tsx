@@ -35,6 +35,12 @@ import { APP_VERSION, checkUpdate, type VersionInfo } from "@/config/appVersion"
 import { Capacitor } from "@capacitor/core";
 import DonateSheet from "@/components/DonateSheet";
 import { cn, isValidPin, sha256Hex } from "@/lib/utils";
+import {
+  getAppIcon,
+  switchAppIcon,
+  isAppIconSwitchSupported,
+  type AppIconName,
+} from "@/lib/appIcon";
 
 /**
  * 三步设置密码：
@@ -73,6 +79,11 @@ export default function SettingsSheet() {
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<VersionInfo | null>(null);
 
+  // APP 图标切换
+  const [iconSupported, setIconSupported] = useState(false);
+  const [currentIcon, setCurrentIcon] = useState<AppIconName>("oyster");
+  const [iconSwitching, setIconSwitching] = useState<AppIconName | null>(null);
+
   useEffect(() => {
     if (!open) {
       setStage("idle");
@@ -90,6 +101,30 @@ export default function SettingsSheet() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
+
+  // 打开设置时读一次当前图标
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [{ supported }, curr] = await Promise.all([
+          isAppIconSwitchSupported(),
+          getAppIcon(),
+        ]);
+        if (cancelled) return;
+        // 在原生平台上才算真正支持；Web mock 只给预览
+        const native = Capacitor.isNativePlatform() && supported;
+        setIconSupported(native);
+        setCurrentIcon(curr.icon);
+      } catch (e) {
+        // 忽略读取错误
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const hasPin = !!lock.passwordHash;
   const pending = stage !== "idle";
@@ -463,6 +498,73 @@ export default function SettingsSheet() {
             </div>
           </section>
 
+          {/* APP 图标切换 */}
+          <section>
+            <div className="label-eyebrow mb-2.5">APP 图标</div>
+            <div className="rounded-xl border border-line bg-ink-900/60 p-4">
+              <p className="mb-3 text-xs leading-relaxed text-muted">
+                选一个你喜欢的战士当桌面图标（切换时桌面图标会立刻生效，某些 Launcher 可能需要几秒刷新）
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <IconOptionCard
+                  name="oyster"
+                  label="生蚝战士"
+                  preview="icon-preview-oyster-192.png"
+                  active={currentIcon === "oyster"}
+                  loading={iconSwitching === "oyster"}
+                  disabled={iconSwitching !== null || !iconSupported}
+                  onPick={async (n) => {
+                    if (!iconSupported) {
+                      toast("此功能仅在 Android APP 中可用", "warn");
+                      return;
+                    }
+                    setIconSwitching(n);
+                    try {
+                      await switchAppIcon(n);
+                      setCurrentIcon(n);
+                      toast(`已切换为生蚝战士图标`, "success");
+                    } catch (e: any) {
+                      toast(e?.message || "切换图标失败", "warn");
+                    } finally {
+                      setIconSwitching(null);
+                    }
+                  }}
+                />
+                <IconOptionCard
+                  name="mushroom"
+                  label="蘑菇战士"
+                  preview="icon-preview-mushroom-192.png"
+                  active={currentIcon === "mushroom"}
+                  loading={iconSwitching === "mushroom"}
+                  disabled={iconSwitching !== null || !iconSupported}
+                  onPick={async (n) => {
+                    if (!iconSupported) {
+                      toast("此功能仅在 Android APP 中可用", "warn");
+                      return;
+                    }
+                    setIconSwitching(n);
+                    try {
+                      await switchAppIcon(n);
+                      setCurrentIcon(n);
+                      toast(`已切换为蘑菇战士图标`, "success");
+                    } catch (e: any) {
+                      toast(e?.message || "切换图标失败", "warn");
+                    } finally {
+                      setIconSwitching(null);
+                    }
+                  }}
+                />
+              </div>
+              {!iconSupported && (
+                <p className="mt-3 text-[11px] leading-relaxed text-muted/70">
+                  {Capacitor.isNativePlatform()
+                    ? "当前版本暂未接入图标切换能力"
+                    : "浏览器预览环境无法切换 Android 桌面图标，请安装 APK 后使用"}
+                </p>
+              )}
+            </div>
+          </section>
+
           {/* 赞赏 */}
           <section>
             <div className="label-eyebrow mb-2.5">支持作者</div>
@@ -620,6 +722,67 @@ export function PrivacyToggle({ icon, title, desc, checked, onChange, accent = "
         />
       </button>
     </div>
+  );
+}
+
+/** 图标选项卡片（生蚝 / 蘑菇） */
+interface IconOptionCardProps {
+  name: AppIconName;
+  label: string;
+  preview: string;
+  active: boolean;
+  loading: boolean;
+  disabled: boolean;
+  onPick: (n: AppIconName) => void;
+}
+function IconOptionCard({
+  name,
+  label,
+  preview,
+  active,
+  loading,
+  disabled,
+  onPick,
+}: IconOptionCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(name)}
+      disabled={disabled && !active}
+      className={cn(
+        "group relative flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all",
+        active
+          ? "border-amber/60 bg-amber/5 shadow-lg shadow-amber/10"
+          : "border-line bg-ink-800/40 hover:border-amber/40 hover:bg-ink-800",
+        (disabled && !active) && "opacity-50 cursor-not-allowed",
+      )}
+    >
+      <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[22px] bg-ink-950 ring-1 ring-line/70 shadow-md">
+        <img
+          src={preview}
+          alt={label}
+          className="h-full w-full object-cover"
+          draggable={false}
+          loading="lazy"
+        />
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-ink-950/60">
+            <RefreshCw size={20} className="animate-spin text-amber-glow" />
+          </div>
+        )}
+        {active && !loading && (
+          <div className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber text-ink-950 shadow-md ring-2 ring-ink-900">
+            <Check size={14} />
+          </div>
+        )}
+      </div>
+      <div className="text-center">
+        <div className="text-sm font-medium text-cream">{label}</div>
+        <div className="text-[11px] text-muted">
+          {active ? "当前使用" : "点此切换"}
+        </div>
+      </div>
+    </button>
   );
 }
 

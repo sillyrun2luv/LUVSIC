@@ -24,6 +24,21 @@
 
         </activity>
 
+        <!-- 蘑菇战士图标切换入口（默认关闭，通过设置页动态启用） -->
+        <activity-alias
+            android:name=".MainActivityMushroom"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mushroom_launcher"
+            android:roundIcon="@mipmap/ic_mushroom_launcher_round"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
