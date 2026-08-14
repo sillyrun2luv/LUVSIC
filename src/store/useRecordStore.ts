@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS: Settings = {
     intervalHours: 24,
   },
   lock: { enabled: false },
+  showFloatingTimer: true,
 };
 
 // 旧材料 → 形式 / 道具 的最佳映射
@@ -63,6 +64,8 @@ interface RecordState {
   setReminder: (patch: Partial<Settings["reminder"]>) => void;
 
   setLock: (patch: Partial<Settings["lock"]>) => void;
+
+  setShowFloatingTimer: (v: boolean) => void;
 
   addForm: (name: string) => void;
   removeForm: (name: string) => void;
@@ -146,6 +149,11 @@ export const useRecordStore = create<RecordState>()(
           settings: { ...state.settings, lock: { ...state.settings.lock, ...patch } },
         })),
 
+      setShowFloatingTimer: (v) =>
+        set((state) => ({
+          settings: { ...state.settings, showFloatingTimer: v },
+        })),
+
       addForm: (name) =>
         set((state) => {
           const trimmed = name.trim();
@@ -226,7 +234,7 @@ export const useRecordStore = create<RecordState>()(
     }),
     {
       name: "zwba_store",
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ records: state.records, settings: state.settings }),
       migrate: (persisted: any) => {
@@ -242,6 +250,7 @@ export const useRecordStore = create<RecordState>()(
           forms: Array.isArray(s.forms) && s.forms.length > 0 ? s.forms : [...DEFAULT_FORMS],
           tools: Array.isArray(s.tools) && s.tools.length > 0 ? s.tools : [...DEFAULT_TOOLS],
           presets: Array.isArray(s.presets) && s.presets.length > 0 ? s.presets : DEFAULT_PRESETS,
+          showFloatingTimer: typeof s.showFloatingTimer === "boolean" ? s.showFloatingTimer : true,
           lock: {
             ...DEFAULT_SETTINGS.lock,
             ...(s.lock ?? {}),

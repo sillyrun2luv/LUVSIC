@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, Pencil, Lock, FileDown, Heart, Info, Palette, LogIn, Loader2, UserX, Megaphone, ChevronRight } from "lucide-react";
+import { Check, Pencil, Lock, FileDown, Heart, Info, Palette, LogIn, Loader2, UserX, Megaphone, ChevronRight, Timer } from "lucide-react";
 import { useProfileStore, AVATAR_OPTIONS } from "@/store/useProfileStore";
 import { useThemeStore, THEMES } from "@/store/useThemeStore";
 import { useRecordStore } from "@/store/useRecordStore";
@@ -32,6 +32,8 @@ export default function Profile() {
   const setCustomColor = useThemeStore((s) => s.setCustomColor);
 
   const records = useRecordStore((s) => s.records);
+  const showFloatingTimer = useRecordStore((s) => s.settings.showFloatingTimer);
+  const setShowFloatingTimer = useRecordStore((s) => s.setShowFloatingTimer);
   const openSettings = useUIStore((s) => s.openSettings);
   const openAuth = useUIStore((s) => s.openAuth);
   const isLoggedIn = useAuthStore((s) => !!s.user?.id);
@@ -412,6 +414,33 @@ export default function Profile() {
             desc="应用启动时需要密码"
             onClick={openSettings}
           />
+          <div className="flex items-center justify-between gap-3 p-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-800 text-mist">
+                <Timer size={18} />
+              </span>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-cream">浮动计时按钮</div>
+                <div className="text-xs text-muted">关闭后可在记录页内使用计时</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowFloatingTimer(!showFloatingTimer)}
+              role="switch"
+              aria-checked={showFloatingTimer}
+              className={cn(
+                "relative h-7 w-12 shrink-0 appearance-none rounded-full border-0 p-0 transition-colors",
+                showFloatingTimer ? "bg-amber" : "bg-ink-700",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
+                  showFloatingTimer ? "translate-x-5" : "translate-x-0",
+                )}
+              />
+            </button>
+          </div>
           <SettingsRow
             icon={<FileDown size={18} />}
             label="数据导出"

@@ -44,6 +44,7 @@ export interface Settings {
   presets: Preset[]; // 快捷预设组合
   reminder: ReminderConfig; // 每日提醒
   lock: LockConfig; // 密码锁
+  showFloatingTimer: boolean; // 是否显示右下角浮动计时按钮
 }
 
 export type ViewKey = "overview" | "record" | "friends" | "profile";

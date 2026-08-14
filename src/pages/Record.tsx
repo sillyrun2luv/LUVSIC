@@ -46,6 +46,14 @@ export default function Record() {
       />
       {subTab === "new" ? (
         <div className="space-y-6">
+          {/* 隐私提示 */}
+          {!editing && (
+            <div className="flex items-center gap-2.5 rounded-xl border border-teal-500/20 bg-teal-500/5 px-4 py-2.5 text-xs leading-relaxed text-teal-200/80">
+              <ShieldCheck size={14} className="shrink-0 text-teal-300" />
+              <span>请注意环境私密安全，确保无人打扰后再开始记录</span>
+            </div>
+          )}
+
           <header>
             <p className="label-eyebrow mb-2">{editing ? "编辑" : "记录"}</p>
             <h1 className="font-display text-4xl font-medium text-cream">
@@ -60,12 +68,6 @@ export default function Record() {
               )}
             </h1>
           </header>
-
-          {/* 隐私提示 */}
-          <div className="flex items-center gap-2 rounded-lg border border-line bg-ink-900/40 px-3 py-2 text-[11px] text-muted">
-            <ShieldCheck size={13} className="shrink-0 text-teal/70" />
-            <span>请确认环境隐私且安全</span>
-          </div>
 
           {/* ⭐ 计时卡片（主入口 —— 放最大最显眼） */}
           {!editing && (

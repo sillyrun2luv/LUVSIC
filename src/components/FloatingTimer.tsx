@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Play, Square } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
+import { useRecordStore } from "@/store/useRecordStore";
 
 function formatTimer(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -13,6 +14,7 @@ export default function FloatingTimer() {
   const timer = useUIStore((s) => s.timer);
   const openTimerStart = useUIStore((s) => s.openTimerStart);
   const openTimerStop = useUIStore((s) => s.openTimerStop);
+  const showFloatingTimer = useRecordStore((s) => s.settings.showFloatingTimer);
 
   const [elapsed, setElapsed] = useState(0);
 
@@ -59,6 +61,9 @@ export default function FloatingTimer() {
       </button>
     );
   }
+
+  // 计时中始终显示（否则用户无法停止）；未计时时受开关控制
+  if (!timer.running && !showFloatingTimer) return null;
 
   return (
     <button

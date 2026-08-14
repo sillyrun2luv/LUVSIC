@@ -3,6 +3,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useThemeStore } from "@/store/useThemeStore";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { isSyncing } from "./sync";
+import { toast } from "@/store/useToastStore";
 import type { RecordEntry } from "@/types";
 
 export type AutoSyncStatus =
@@ -83,6 +84,25 @@ async function doSync() {
   errorMessage = null;
 
   try {
+    // 0) 安全检查：本地记录少于云端时，不自动覆盖云端
+    const localRecordCount = useRecordStore.getState().records.length;
+    const { count: cloudCount, error: cntErr } = await supabase
+      .from("records")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+    if (!cntErr && typeof cloudCount === "number" && localRecordCount < cloudCount) {
+      setStatus("error");
+      errorMessage = `本地 ${localRecordCount} 条 < 云端 ${cloudCount} 条，已暂停自动同步`;
+      toast(
+        `本地记录（${localRecordCount}条）少于云端（${cloudCount}条），已暂停自动上传。请在「设置→云端同步」选择「从云端下载」或「强制覆盖上传」`,
+        "warn",
+      );
+      setTimeout(() => {
+        if (_status === "error") setStatus("idle");
+      }, 10_000);
+      return;
+    }
     // 1) 设置 + 主题
     const { settings } = useRecordStore.getState();
     const { themeId, customColor } = useThemeStore.getState();

@@ -1,5 +1,5 @@
 {
-  "version": "1.1.5",
-  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.1.5/ziweiba.apk",
-  "notes": "v1.1.5 更新：\n· 新增 APP 图标切换功能（生蚝战士 / 蘑菇战士）\n· 修复自适应图标配置（Android 8+ 正确显示图标）\n· 修复设置页面图标预览图显示异常\n· 固定 APK 签名，支持覆盖安装（无需卸载旧版）\n· 记录页新增「请确认环境隐私且安全」提示\n· 更新应用图标为生蚝战士（默认）"
+  "version": "1.1.4",
+  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.1.4/ziweiba.apk",
+  "notes": "v1.1.4 更新：\n· 记录页新增隐私安全提示\n· 新增浮动计时按钮开关（我的→更多设置）\n· 本地记录少于云端时暂停自动同步并提示\n· 设置新增 JSON 备份导入功能"
 }
