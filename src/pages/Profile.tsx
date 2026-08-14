@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, Pencil, Lock, FileDown, Heart, Info, Palette, LogIn, Loader2, UserX, Megaphone, ChevronRight, Timer, Image, Sparkles, Settings2 } from "lucide-react";
+import { Check, Pencil, Lock, FileDown, Heart, Info, Palette, LogIn, Loader2, UserX, Megaphone, ChevronRight, Timer, Image, Sparkles } from "lucide-react";
 import { useProfileStore, AVATAR_OPTIONS } from "@/store/useProfileStore";
 import { useThemeStore, THEMES } from "@/store/useThemeStore";
 import { useRecordStore } from "@/store/useRecordStore";
@@ -58,7 +58,6 @@ export default function Profile() {
   const [currentIcon, setCurrentIcon] = useState<AppIconType>("mushroom");
   const [showIconSheet, setShowIconSheet] = useState(false);
   const [switchingIcon, setSwitchingIcon] = useState(false);
-  const [showMoreSheet, setShowMoreSheet] = useState(false);
 
   // 进入"我的"页面时刷新管理员状态
   useEffect(() => {
@@ -435,168 +434,109 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* 更多设置 - 单一入口 */}
+      {/* 更多设置 */}
       <section>
-        <div className="label-eyebrow mb-3">更多</div>
-        <div className="surface overflow-hidden rounded-2xl">
+        <div className="label-eyebrow mb-3">更多设置</div>
+        <div className="surface divide-y divide-line/40 overflow-hidden rounded-2xl">
+          {/* 应用图标切换 */}
           <button
-            onClick={() => setShowMoreSheet(true)}
+            onClick={() => setShowIconSheet(true)}
             className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-ink-800/50"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-800 text-mist">
-              <Settings2 size={18} />
+              <Image size={18} />
             </span>
             <div className="flex-1">
-              <div className="text-sm font-medium text-cream">更多设置</div>
+              <div className="text-sm font-medium text-cream flex items-center gap-1.5">
+                应用图标
+                <Sparkles size={12} className="text-amber-glow" />
+              </div>
               <div className="text-xs text-muted">
-                图标 · 密码锁 · 计时按钮 · 导出 · 关于
+                当前：{currentIcon === "mushroom" ? "蘑菇战士" : "鲍鱼战士"}
+                {!Capacitor.isNativePlatform() && "（仅 Android 原生可用）"}
               </div>
             </div>
             <ChevronRight size={16} className="text-muted" />
           </button>
+
+          {/* 密码锁 */}
+          <SettingsRow
+            icon={<Lock size={18} />}
+            label="密码锁"
+            desc="应用启动时需要密码"
+            onClick={openSettings}
+          />
+
+          {/* 浮动计时按钮开关 */}
+          <div className="flex items-center justify-between gap-3 p-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-800 text-mist">
+                <Timer size={18} />
+              </span>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-cream">浮动计时按钮</div>
+                <div className="text-xs text-muted">关闭后可在记录页内使用计时</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowFloatingTimer(!showFloatingTimer)}
+              role="switch"
+              aria-checked={showFloatingTimer}
+              className={cn(
+                "relative h-7 w-12 shrink-0 appearance-none rounded-full border-0 p-0 transition-colors",
+                showFloatingTimer ? "bg-amber" : "bg-ink-700",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
+                  showFloatingTimer ? "translate-x-5" : "translate-x-0",
+                )}
+              />
+            </button>
+          </div>
+
+          {/* 数据导出 */}
+          <SettingsRow
+            icon={<FileDown size={18} />}
+            label="数据导出"
+            desc="导出 Excel / JSON 备份"
+            onClick={openSettings}
+          />
+
+          {/* 支持作者 */}
+          <SettingsRow
+            icon={<Heart size={18} />}
+            label="支持作者"
+            desc="请作者喝杯咖啡"
+            onClick={openSettings}
+          />
+
+          {/* 关于 */}
+          <SettingsRow
+            icon={<Info size={18} />}
+            label="关于"
+            desc="版本信息与更新"
+            onClick={openSettings}
+          />
+
+          {/* 删除账户 */}
+          {isLoggedIn && (
+            <button
+              onClick={() => setOpenDeleteAccount(true)}
+              className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-red-500/5"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10 text-red-300">
+                <UserX size={18} />
+              </span>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-red-200">删除账户</div>
+                <div className="text-xs text-red-300/70">永久清空云端+本地数据，不可恢复</div>
+              </div>
+            </button>
+          )}
         </div>
       </section>
-
-      {/* 更多设置弹窗 */}
-      {showMoreSheet && (
-        <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowMoreSheet(false)}
-        >
-          <div
-            className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl border-t border-line bg-ink-900 p-6 pb-10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-cream">更多设置</h3>
-              <button
-                onClick={() => setShowMoreSheet(false)}
-                className="text-muted hover:text-cream"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="surface divide-y divide-line/40 overflow-hidden rounded-2xl">
-              {/* 应用图标切换 */}
-              <button
-                onClick={() => {
-                  setShowMoreSheet(false);
-                  setShowIconSheet(true);
-                }}
-                className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-ink-800/50"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-800 text-mist">
-                  <Image size={18} />
-                </span>
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-cream flex items-center gap-1.5">
-                    应用图标
-                    <Sparkles size={12} className="text-amber-glow" />
-                  </div>
-                  <div className="text-xs text-muted">
-                    当前：{currentIcon === "mushroom" ? "蘑菇战士" : "鲍鱼战士"}
-                    {!Capacitor.isNativePlatform() && "（仅 Android 原生可用）"}
-                  </div>
-                </div>
-                <ChevronRight size={16} className="text-muted" />
-              </button>
-
-              {/* 密码锁 */}
-              <SettingsRow
-                icon={<Lock size={18} />}
-                label="密码锁"
-                desc="应用启动时需要密码"
-                onClick={() => {
-                  setShowMoreSheet(false);
-                  openSettings();
-                }}
-              />
-
-              {/* 浮动计时按钮开关 */}
-              <div className="flex items-center justify-between gap-3 p-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-800 text-mist">
-                    <Timer size={18} />
-                  </span>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-cream">浮动计时按钮</div>
-                    <div className="text-xs text-muted">关闭后可在记录页内使用计时</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowFloatingTimer(!showFloatingTimer)}
-                  role="switch"
-                  aria-checked={showFloatingTimer}
-                  className={cn(
-                    "relative h-7 w-12 shrink-0 appearance-none rounded-full border-0 p-0 transition-colors",
-                    showFloatingTimer ? "bg-amber" : "bg-ink-700",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
-                      showFloatingTimer ? "translate-x-5" : "translate-x-0",
-                    )}
-                  />
-                </button>
-              </div>
-
-              {/* 数据导出 */}
-              <SettingsRow
-                icon={<FileDown size={18} />}
-                label="数据导出"
-                desc="导出 Excel / JSON 备份"
-                onClick={() => {
-                  setShowMoreSheet(false);
-                  openSettings();
-                }}
-              />
-
-              {/* 支持作者 */}
-              <SettingsRow
-                icon={<Heart size={18} />}
-                label="支持作者"
-                desc="请作者喝杯咖啡"
-                onClick={() => {
-                  setShowMoreSheet(false);
-                  openSettings();
-                }}
-              />
-
-              {/* 关于 */}
-              <SettingsRow
-                icon={<Info size={18} />}
-                label="关于"
-                desc="版本信息与更新"
-                onClick={() => {
-                  setShowMoreSheet(false);
-                  openSettings();
-                }}
-              />
-
-              {/* 删除账户 */}
-              {isLoggedIn && (
-                <button
-                  onClick={() => {
-                    setShowMoreSheet(false);
-                    setOpenDeleteAccount(true);
-                  }}
-                  className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-red-500/5"
-                >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10 text-red-300">
-                    <UserX size={18} />
-                  </span>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-red-200">删除账户</div>
-                    <div className="text-xs text-red-300/70">永久清空云端+本地数据，不可恢复</div>
-                  </div>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 应用图标选择弹窗 */}
       {showIconSheet && (
