@@ -1,11 +1,12 @@
 import type { RecordEntry } from "@/types";
 import { formatDateTime } from "./date";
+import { saveFile } from "./saveFile";
 
 /**
  * 导出记录为可被 Excel / WPS 直接打开的 .xls（HTML Table）文件。
  * 不依赖任何第三方库，体积小兼容性好。
  */
-export function exportRecordsXls(records: RecordEntry[]) {
+export async function exportRecordsXls(records: RecordEntry[]): Promise<void> {
   const rows: string[] = [];
   // 表头
   rows.push(
@@ -59,18 +60,13 @@ tr:nth-child(1) td { background:#F5E6CE; font-weight:bold; }
 </html>`.trim();
 
   // BOM 让 Excel 正确识别 UTF-8
-  const blob = new Blob(["\uFEFF" + html], {
-    type: "application/vnd.ms-excel;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
+  const content = "\uFEFF" + html;
   const date = new Date().toISOString().slice(0, 10);
-  a.download = `自卫吧-记录-${date}.xls`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  await saveFile({
+    filename: `自卫吧-记录-${date}.xls`,
+    content,
+    mimeType: "application/vnd.ms-excel;charset=utf-8",
+  });
 }
 
 function htmlCellEscape(s: string | number): string {

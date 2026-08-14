@@ -23,6 +23,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { toast } from "@/store/useToastStore";
 import { exportRecordsXls } from "@/lib/exportExcel";
+import { saveFile } from "@/lib/saveFile";
 import { uploadToCloud, downloadFromCloud, getCloudRecordCount } from "@/lib/sync";
 import {
   startAutoSync,
@@ -202,31 +203,37 @@ export default function SettingsSheet() {
     }
   };
 
-  const handleExportXls = () => {
+  const handleExportXls = async () => {
     if (records.length === 0) {
       toast("暂无记录可导出", "warn");
       return;
     }
-    exportRecordsXls(records);
-    toast(`已导出 ${records.length} 条记录到 Excel`, "success");
+    try {
+      await exportRecordsXls(records);
+      toast(`已导出 ${records.length} 条记录到 Excel`, "success");
+    } catch (err) {
+      console.error(err);
+      toast("导出 Excel 失败", "warn");
+    }
   };
 
-  const handleExportJson = () => {
+  const handleExportJson = async () => {
     if (records.length === 0) {
       toast("暂无记录可导出", "warn");
       return;
     }
-    const blob = new Blob([JSON.stringify(records, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
     const date = new Date().toISOString().slice(0, 10);
-    a.download = `zwba-backup-${date}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast(`已导出 ${records.length} 条记录到 JSON`, "success");
+    try {
+      await saveFile({
+        filename: `zwba-backup-${date}.json`,
+        content: JSON.stringify(records, null, 2),
+        mimeType: "application/json",
+      });
+      toast(`已导出 ${records.length} 条记录到 JSON`, "success");
+    } catch (err) {
+      console.error(err);
+      toast("导出 JSON 失败", "warn");
+    }
   };
 
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Download, Upload, Trash2 } from "lucide-react";
 import { useRecordStore } from "@/store/useRecordStore";
 import { toast } from "@/store/useToastStore";
+import { saveFile } from "@/lib/saveFile";
 import type { RecordEntry } from "@/types";
 
 interface BackupBarProps {
@@ -13,22 +14,23 @@ export default function BackupBar({ onClearAll }: BackupBarProps) {
   const importData = useRecordStore((s) => s.importData);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (records.length === 0) {
       toast("暂无记录可导出", "warn");
       return;
     }
-    const blob = new Blob([JSON.stringify(records, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
     const date = new Date().toISOString().slice(0, 10);
-    a.download = `zwba-backup-${date}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast("已导出备份", "success");
+    try {
+      await saveFile({
+        filename: `zwba-backup-${date}.json`,
+        content: JSON.stringify(records, null, 2),
+        mimeType: "application/json",
+      });
+      toast("已导出备份", "success");
+    } catch (err) {
+      console.error(err);
+      toast("导出失败", "warn");
+    }
   };
 
   const handleImport = (file: File) => {
