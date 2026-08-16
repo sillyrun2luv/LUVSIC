@@ -4,6 +4,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useThemeStore } from "@/store/useThemeStore";
 import { toast } from "@/store/useToastStore";
 import type { RecordEntry } from "@/types";
+import { t } from "@/store/useI18nStore";
 
 let syncing = false;
 
@@ -43,7 +44,7 @@ async function backupCloudRecords(userId: string) {
     .from("records")
     .select("*")
     .eq("user_id", userId);
-  if (error) throw new Error("备份云端数据失败: " + error.message);
+  if (error) throw new Error(t('settings.cloudSync.backupCloudFailed', error.message));
   return data ?? [];
 }
 
@@ -62,8 +63,8 @@ async function restoreCloudRecords(userId: string, backup: any[]) {
  * 返回备份供撤销使用
  */
 export async function uploadToCloud(userId: string) {
-  if (syncing) throw new Error("正在同步中");
-  if (!userId) throw new Error("未登录");
+  if (syncing) throw new Error(t('settings.cloudSync.alreadySyncing'));
+  if (!userId) throw new Error(t('settings.cloudSync.notLoggedIn'));
   syncing = true;
 
   try {
@@ -75,7 +76,7 @@ export async function uploadToCloud(userId: string) {
       .from("records")
       .delete()
       .eq("user_id", userId);
-    if (delErr) throw new Error("清空云端记录失败: " + delErr.message);
+    if (delErr) throw new Error(t('settings.cloudSync.clearCloudRecordsFailed', delErr.message));
 
     // 3. 上传本地所有记录
     const localRecords = useRecordStore.getState().records;
@@ -87,7 +88,7 @@ export async function uploadToCloud(userId: string) {
       if (upErr) {
         // 上传失败，尝试恢复备份
         await restoreCloudRecords(userId, backup);
-        throw new Error("上传记录失败: " + upErr.message);
+        throw new Error(t('settings.cloudSync.uploadRecordsFailed', upErr.message));
       }
     }
 
@@ -123,8 +124,8 @@ export async function uploadToCloud(userId: string) {
  * 返回备份供撤销使用
  */
 export async function downloadFromCloud(userId: string) {
-  if (syncing) throw new Error("正在同步中");
-  if (!userId) throw new Error("未登录");
+  if (syncing) throw new Error(t('settings.cloudSync.alreadySyncing'));
+  if (!userId) throw new Error(t('settings.cloudSync.notLoggedIn'));
   syncing = true;
 
   try {
@@ -140,7 +141,7 @@ export async function downloadFromCloud(userId: string) {
       .eq("user_id", userId)
       .is("deleted_at", null);
 
-    if (error) throw new Error("拉取记录失败: " + error.message);
+    if (error) throw new Error(t('settings.cloudSync.fetchRecordsFailed', error.message));
 
     // 3. 用云端记录替换本地
     const cloudRecords = (remoteRows ?? []).map(fromRow);

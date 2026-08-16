@@ -16,6 +16,7 @@ import {
   Search,
   BarChart3,
   Upload,
+  Globe,
 } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useRecordStore } from "@/store/useRecordStore";
@@ -37,6 +38,7 @@ import { APP_VERSION, checkUpdate, type VersionInfo } from "@/config/appVersion"
 import { Capacitor } from "@capacitor/core";
 import DonateSheet from "@/components/DonateSheet";
 import { cn, isValidPin, sha256Hex } from "@/lib/utils";
+import { t, useI18nStore, LOCALES, type LocaleCode } from "@/store/useI18nStore";
 
 /**
  * 三步设置密码：
@@ -59,6 +61,10 @@ export default function SettingsSheet() {
   const showAgg = useProfileStore((s) => s.showAggregatesToFriends);
   const setSearchable = useProfileStore((s) => s.setSearchable);
   const setShowAggregates = useProfileStore((s) => s.setShowAggregatesToFriends);
+
+  // 语言
+  const locale = useI18nStore((s) => s.locale);
+  const setLocale = useI18nStore((s) => s.setLocale);
   // 本地改动的 privacy 是否需要「点同步到云端」提示（和上传到云端一起），这里不拦截，
   // 用户下次按「上传到云端」就会自然同步。操作时给个提示即可。
 
@@ -131,18 +137,18 @@ export default function SettingsSheet() {
   const commitCreate = async () => {
     if (busy) return;
     if (!isValidPin(newPin)) {
-      toast("请输入 4-8 位数字", "warn");
+      toast(t("settings.passwordLock.setNewHint"), "warn");
       return;
     }
     if (newPin !== newPin2) {
-      toast("两次密码不一致", "warn");
+      toast(t("settings.passwordLock.notMatch"), "warn");
       return;
     }
     setBusy(true);
     try {
       const hash = await sha256Hex(newPin);
       setLock({ passwordHash: hash, enabled: true });
-      toast("密码已设置并开启密码锁", "success");
+      toast(t("common.done"), "success");
       setStage("idle");
       setNewPin("");
       setNewPin2("");
@@ -154,23 +160,23 @@ export default function SettingsSheet() {
   const commitChange = async () => {
     if (busy) return;
     if (!isValidPin(oldPin) || !isValidPin(newPin)) {
-      toast("请输入 4-8 位数字", "warn");
+      toast(t("settings.passwordLock.setNewHint"), "warn");
       return;
     }
     if (newPin !== newPin2) {
-      toast("两次新密码不一致", "warn");
+      toast(t("settings.passwordLock.newNotMatch"), "warn");
       return;
     }
     setBusy(true);
     try {
       const oldHash = await sha256Hex(oldPin);
       if (oldHash !== lock.passwordHash) {
-        toast("原密码错误", "warn");
+        toast(t("settings.passwordLock.oldPasswordWrong", "原密码错误"), "warn");
         return;
       }
       const newHash = await sha256Hex(newPin);
       setLock({ passwordHash: newHash });
-      toast("密码已修改", "success");
+      toast(t("common.done"), "success");
       setStage("idle");
       setOldPin("");
       setNewPin("");
@@ -183,19 +189,19 @@ export default function SettingsSheet() {
   const commitDisable = async () => {
     if (busy) return;
     if (!isValidPin(oldPin)) {
-      toast("请输入 4-8 位数字密码", "warn");
+      toast(t("settings.passwordLock.enterToDisable"), "warn");
       return;
     }
     setBusy(true);
     try {
       const hash = await sha256Hex(oldPin);
       if (hash !== lock.passwordHash) {
-        toast("密码错误", "warn");
+        toast(t("settings.passwordLock.passwordWrong", "密码错误"), "warn");
         return;
       }
       // 关闭并清除密码
       setLock({ enabled: false, passwordHash: undefined });
-      toast("已关闭密码锁", "success");
+      toast(t("common.done"), "success");
       setStage("idle");
       setOldPin("");
     } finally {
@@ -205,21 +211,21 @@ export default function SettingsSheet() {
 
   const handleExportXls = async () => {
     if (records.length === 0) {
-      toast("暂无记录可导出", "warn");
+      toast(t("settings.dataExport.noRecordsToExport"), "warn");
       return;
     }
     try {
       await exportRecordsXls(records);
-      toast(`已导出 ${records.length} 条记录到 Excel`, "success");
+      toast(t("settings.dataExport.exportSuccess"), "success");
     } catch (err) {
       console.error(err);
-      toast("导出 Excel 失败", "warn");
+      toast(t("settings.dataExport.exportFailed"), "warn");
     }
   };
 
   const handleExportJson = async () => {
     if (records.length === 0) {
-      toast("暂无记录可导出", "warn");
+      toast(t("settings.dataExport.noRecordsToExport"), "warn");
       return;
     }
     const date = new Date().toISOString().slice(0, 10);
@@ -229,10 +235,10 @@ export default function SettingsSheet() {
         content: JSON.stringify(records, null, 2),
         mimeType: "application/json",
       });
-      toast(`已导出 ${records.length} 条记录到 JSON`, "success");
+      toast(t("settings.dataExport.exportSuccess"), "success");
     } catch (err) {
       console.error(err);
-      toast("导出 JSON 失败", "warn");
+      toast(t("settings.dataExport.exportFailed"), "warn");
     }
   };
 
@@ -244,14 +250,14 @@ export default function SettingsSheet() {
       try {
         const data = JSON.parse(String(reader.result));
         if (!Array.isArray(data)) {
-          toast("JSON 格式错误：应为数组", "warn");
+          toast(t("settings.dataExport.invalidFileFormat"), "warn");
           return;
         }
         clearAll();
         importData(data);
-        toast(`已导入 ${data.length} 条记录`, "success");
+        toast(t("settings.dataExport.importSuccess", data.length), "success");
       } catch {
-        toast("文件解析失败，请检查 JSON 格式", "warn");
+        toast(t("settings.dataExport.invalidFileFormat"), "warn");
       }
     };
     reader.readAsText(file);
@@ -271,11 +277,11 @@ export default function SettingsSheet() {
            style={{ animationName: "slideInRight" }}>
         {/* 头 */}
         <div className="flex items-center justify-between border-b border-line/60 px-5 py-4">
-          <h3 className="font-display text-xl text-cream">设置</h3>
+          <h3 className="font-display text-xl text-cream">{t("settings.title")}</h3>
           <button
             onClick={close}
             className="text-muted hover:text-mist"
-            aria-label="关闭设置"
+            aria-label={t("settings.close")}
           >
             <X size={18} />
           </button>
@@ -295,9 +301,9 @@ export default function SettingsSheet() {
                   {lock.enabled ? <LockKeyhole size={18} /> : <Lock size={18} />}
                 </div>
                 <div>
-                  <div className="text-sm text-cream">密码锁</div>
+                  <div className="text-sm text-cream">{t("settings.passwordLock.title")}</div>
                   <div className="text-xs text-muted">
-                    {lock.enabled ? "打开 App 前需输入密码" : "未开启"}
+                    {lock.enabled ? t("settings.passwordLock.desc") : t("settings.passwordLock.notEnabled")}
                   </div>
                 </div>
               </div>
@@ -305,7 +311,7 @@ export default function SettingsSheet() {
                 onClick={toggleEnabled}
                 role="switch"
                 aria-checked={lock.enabled || pending}
-                aria-label={pending ? "取消操作" : lock.enabled ? "关闭密码锁" : "开启密码锁"}
+                aria-label={pending ? t("settings.passwordLock.cancelAction") : lock.enabled ? t("settings.passwordLock.disable") : t("settings.passwordLock.enable")}
                 className={cn(
                   "relative h-7 w-12 shrink-0 appearance-none rounded-full border-0 p-0 transition-colors",
                   pending
@@ -328,11 +334,11 @@ export default function SettingsSheet() {
             {stage === "create" && (
               <div className="animate-fadeIn mt-4 space-y-3 rounded-xl border border-line bg-ink-900/60 p-4">
                 <p className="text-xs text-muted">
-                  设置 4-8 位数字密码（仅保存在你本机，不可逆，请记牢）
+                  {t("settings.passwordLock.setNewHint")}
                 </p>
-                <PinRow label="新密码" value={newPin} onChange={setNewPin} show={showNew} onToggle={() => setShowNew((v) => !v)} />
+                <PinRow label={t("settings.passwordLock.newPassword")} value={newPin} onChange={setNewPin} show={showNew} onToggle={() => setShowNew((v) => !v)} />
                 <PinRow
-                  label="再输一次"
+                  label={t("settings.passwordLock.confirmPassword")}
                   value={newPin2}
                   onChange={setNewPin2}
                   show={showNew2}
@@ -344,14 +350,14 @@ export default function SettingsSheet() {
                     onClick={() => { setStage("idle"); setNewPin(""); setNewPin2(""); }}
                     className="flex-1 rounded-full border border-line px-4 py-2 text-sm text-mist hover:bg-ink-800"
                   >
-                    取消
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => void commitCreate()}
                     disabled={busy}
                     className="flex-1 rounded-full bg-amber px-4 py-2 text-sm text-ink-950 hover:bg-amber-glow disabled:opacity-60"
                   >
-                    {busy ? "设置中…" : "完成"}
+                    {busy ? t("settings.passwordLock.setting") : t("settings.passwordLock.done")}
                   </button>
                 </div>
               </div>
@@ -359,10 +365,10 @@ export default function SettingsSheet() {
 
             {stage === "change" && (
               <div className="animate-fadeIn mt-4 space-y-3 rounded-xl border border-line bg-ink-900/60 p-4">
-                <PinRow label="原密码" value={oldPin} onChange={setOldPin} show={showOld} onToggle={() => setShowOld((v) => !v)} />
-                <PinRow label="新密码" value={newPin} onChange={setNewPin} show={showNew} onToggle={() => setShowNew((v) => !v)} />
+                <PinRow label={t("settings.passwordLock.oldPassword")} value={oldPin} onChange={setOldPin} show={showOld} onToggle={() => setShowOld((v) => !v)} />
+                <PinRow label={t("settings.passwordLock.newPassword2")} value={newPin} onChange={setNewPin} show={showNew} onToggle={() => setShowNew((v) => !v)} />
                 <PinRow
-                  label="再输一次"
+                  label={t("settings.passwordLock.confirmPassword")}
                   value={newPin2}
                   onChange={setNewPin2}
                   show={showNew2}
@@ -374,14 +380,14 @@ export default function SettingsSheet() {
                     onClick={() => { setStage("idle"); setOldPin(""); setNewPin(""); setNewPin2(""); }}
                     className="flex-1 rounded-full border border-line px-4 py-2 text-sm text-mist hover:bg-ink-800"
                   >
-                    取消
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => void commitChange()}
                     disabled={busy}
                     className="flex-1 rounded-full bg-amber px-4 py-2 text-sm text-ink-950 hover:bg-amber-glow disabled:opacity-60"
                   >
-                    {busy ? "提交中…" : "修改"}
+                    {busy ? t("settings.passwordLock.submitting") : t("settings.passwordLock.modify")}
                   </button>
                 </div>
               </div>
@@ -389,21 +395,21 @@ export default function SettingsSheet() {
 
             {stage === "disable" && (
               <div className="animate-fadeIn mt-4 space-y-3 rounded-xl border border-line bg-ink-900/60 p-4">
-                <p className="text-xs text-muted">请输入当前密码，以关闭密码锁</p>
-                <PinRow label="当前密码" value={oldPin} onChange={setOldPin} show={showOld} onToggle={() => setShowOld((v) => !v)} />
+                <p className="text-xs text-muted">{t("settings.passwordLock.enterToDisable")}</p>
+                <PinRow label={t("settings.passwordLock.currentPassword")} value={oldPin} onChange={setOldPin} show={showOld} onToggle={() => setShowOld((v) => !v)} />
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => { setStage("idle"); setOldPin(""); }}
                     className="flex-1 rounded-full border border-line px-4 py-2 text-sm text-mist hover:bg-ink-800"
                   >
-                    取消
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={() => void commitDisable()}
                     disabled={busy}
                     className="flex-1 rounded-full border border-red-500/40 px-4 py-2 text-sm text-red-200 hover:bg-red-500/10 disabled:opacity-60"
                   >
-                    {busy ? "验证中…" : "确认关闭"}
+                    {busy ? t("settings.passwordLock.verifying") : t("settings.passwordLock.confirmDisable")}
                   </button>
                 </div>
               </div>
@@ -416,23 +422,23 @@ export default function SettingsSheet() {
                 className="mt-3 flex items-center gap-2 rounded-full border border-line px-4 py-2 text-xs text-mist hover:border-amber/40 hover:text-amber-glow"
               >
                 <Pencil size={13} />
-                修改密码
+                {t("settings.passwordLock.modifyTitle")}
               </button>
             )}
           </section>
 
           {/* 云同步 */}
           <section>
-            <div className="label-eyebrow mb-2.5">云端 · 同步</div>
+            <div className="label-eyebrow mb-2.5">{t("settings.cloudSync.title")}</div>
             <CloudSyncCard />
           </section>
 
           {/* 数据导出（Excel + JSON） */}
           <section>
-            <div className="label-eyebrow mb-2.5">数据 · 导出</div>
+            <div className="label-eyebrow mb-2.5">{t("settings.dataExport.title")}</div>
             <div className="rounded-xl border border-line bg-ink-900/60 p-4">
               <p className="mb-3 text-xs leading-relaxed text-muted">
-                导出记录用于备份或迁移。Excel 适合查看，JSON 适合恢复导入。
+                {t("settings.dataExport.desc")}
               </p>
               <div className="space-y-2">
                 <button
@@ -440,21 +446,21 @@ export default function SettingsSheet() {
                   className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow border border-line"
                 >
                   <FileSpreadsheet size={15} />
-                  导出 Excel
+                  {t("settings.dataExport.exportExcel")}
                 </button>
                 <button
                   onClick={handleExportJson}
                   className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow border border-line"
                 >
                   <FileJson size={15} />
-                  导出 JSON 备份
+                  {t("settings.dataExport.exportJson")}
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow border border-line"
                 >
                   <Upload size={15} />
-                  导入 JSON 备份
+                  {t("settings.dataExport.importJson")}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -465,58 +471,100 @@ export default function SettingsSheet() {
                 />
               </div>
               <p className="mt-3 text-[11px] text-muted/80">
-                共 {records.length} 条记录可导出
+                {t("settings.dataExport.exportableCount", records.length)}
               </p>
             </div>
           </section>
 
           {/* 社交隐私 */}
           <section>
-            <div className="label-eyebrow mb-2.5">社交 · 隐私</div>
+            <div className="label-eyebrow mb-2.5">{t("settings.socialPrivacy.title")}</div>
             <div className="space-y-3 rounded-xl border border-line bg-ink-900/60 p-4">
               <PrivacyToggle
                 icon={<Search size={18} />}
-                title="允许通过昵称被搜索"
+                title={t("settings.socialPrivacy.searchable")}
                 desc={
                   searchable
-                    ? "其他人能通过昵称搜到你"
-                    : "关闭后将无法被任何搜索结果匹配"
+                    ? t("settings.socialPrivacy.searchableDesc")
+                    : t("settings.socialPrivacy.searchableOffDesc")
                 }
                 checked={searchable}
                 onChange={(v) => {
                   setSearchable(v);
-                  toast(v ? "已允许被搜索" : "已关闭被搜索", "success");
+                  toast(v ? t("settings.socialPrivacy.searchableOn", "已允许被搜索") : t("settings.socialPrivacy.searchableOff", "已关闭被搜索"), "success");
                 }}
                 accent="teal"
               />
               <PrivacyToggle
                 icon={<BarChart3 size={18} />}
-                title="好友可查看我的统计概览"
+                title={t("settings.socialPrivacy.showAggregates")}
                 desc={
                   showAgg
-                    ? "好友能在排行榜看到你的总次数/总时长等聚合数字"
-                    : "好友只能看到昵称和头像"
+                    ? t("settings.socialPrivacy.showAggregatesDesc")
+                    : t("settings.socialPrivacy.showAggregatesOffDesc")
                 }
                 checked={showAgg}
                 onChange={(v) => {
                   setShowAggregates(v);
-                  toast(v ? "已允许好友查看统计" : "已隐藏统计概览", "success");
+                  toast(v ? t("settings.socialPrivacy.showAggregatesOn", "已允许好友查看统计") : t("settings.socialPrivacy.showAggregatesOff", "已隐藏统计概览"), "success");
                 }}
                 accent="violet"
               />
               <p className="pt-1 text-[11px] leading-relaxed text-muted/80">
                 <Users size={11} className="-mt-0.5 mr-1 inline" />
-                改完别忘了在上方「云端 · 同步」点「上传到云端」，否则隐私设置只保存在本机。
+                {t("settings.socialPrivacy.syncReminder")}
               </p>
+            </div>
+          </section>
+
+          {/* 语言 · Language */}
+          <section>
+            <div className="label-eyebrow mb-2.5">{t("settings.language.title")}</div>
+            <div className="rounded-xl border border-line bg-ink-900/60 p-4">
+              <div className="mb-3 flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink-800 text-mist">
+                  <Globe size={18} />
+                </span>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-cream">
+                    {t("settings.language.label")}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted">
+                    {t("settings.language.desc")}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {LOCALES.map((opt) => {
+                  const selected = locale === opt.code;
+                  return (
+                    <button
+                      key={opt.code}
+                      onClick={() => {
+                        setLocale(opt.code);
+                      }}
+                      className={cn(
+                        "flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-center transition-all",
+                        selected
+                          ? "border-amber/60 bg-amber/10 text-amber-glow"
+                          : "border-line bg-ink-800/40 text-mist hover:border-amber/30 hover:text-cream",
+                      )}
+                    >
+                      <span className="text-base font-semibold">{opt.nativeName}</span>
+                      <span className="text-[10px] text-muted/80">{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </section>
 
           {/* 赞赏 */}
           <section>
-            <div className="label-eyebrow mb-2.5">支持作者</div>
+            <div className="label-eyebrow mb-2.5">{t("settings.supportAuthor.title")}</div>
             <div className="rounded-xl border border-amber/20 bg-amber/5 p-4">
               <p className="mb-3 text-xs leading-relaxed text-muted">
-                App 功能完全免费，我只是一个讨口子 OVO（非强制付费）
+                {t("settings.supportAuthor.desc")}
               </p>
               <DonateSheet />
             </div>
@@ -524,10 +572,10 @@ export default function SettingsSheet() {
 
           {/* 关于 · 更新 */}
           <section>
-            <div className="label-eyebrow mb-2.5">关于</div>
+            <div className="label-eyebrow mb-2.5">{t("settings.about.title")}</div>
             <div className="rounded-xl border border-line bg-ink-900/60 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs text-muted">当前版本</span>
+                <span className="text-xs text-muted">{t("settings.about.currentVersion")}</span>
                 <span className="font-mono text-xs text-amber-glow">v{APP_VERSION}</span>
               </div>
               <button
@@ -538,7 +586,7 @@ export default function SettingsSheet() {
                   if (hasUpdate && info) {
                     setUpdateInfo(info);
                   } else {
-                    toast("已是最新版本", "success");
+                    toast(t("settings.about.isLatest"), "success");
                   }
                   setCheckingUpdate(false);
                 }}
@@ -546,7 +594,7 @@ export default function SettingsSheet() {
                 className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow disabled:opacity-60"
               >
                 <RefreshCw size={15} className={checkingUpdate ? "animate-spin" : ""} />
-                {checkingUpdate ? "检查中…" : "检查更新"}
+                {checkingUpdate ? t("settings.about.checking") : t("settings.about.checkUpdate")}
               </button>
             </div>
           </section>
@@ -554,8 +602,8 @@ export default function SettingsSheet() {
 
         {/* 底部版权样式 */}
         <div className="border-t border-line/60 p-4">
-          <p className="font-display text-sm text-muted">自卫吧</p>
-          <p className="text-[11px] text-muted/70">与自己相处的片刻</p>
+          <p className="font-display text-sm text-muted">{t("app.name")}</p>
+          <p className="text-[11px] text-muted/70">{t("app.subtitle")}</p>
         </div>
       </aside>
 
@@ -590,7 +638,7 @@ function PinRow({ label, value, onChange, show, onToggle, mismatch }: PinRowProp
               onChange(v);
             }}
             maxLength={8}
-            placeholder="4-8 位数字"
+            placeholder={t("settings.passwordLock.pinPlaceholder")}
             className={cn(
               "w-full rounded-lg border bg-ink-800 px-3 py-2 pr-9 font-mono text-amber-glow outline-none transition-colors",
               mismatch
@@ -602,7 +650,7 @@ function PinRow({ label, value, onChange, show, onToggle, mismatch }: PinRowProp
             type="button"
             onClick={onToggle}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-muted/70 hover:text-amber-glow"
-            aria-label={show ? "隐藏" : "显示"}
+            aria-label={show ? t("lockGate.hidePassword") : t("lockGate.showPassword")}
           >
             {show ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
@@ -614,7 +662,7 @@ function PinRow({ label, value, onChange, show, onToggle, mismatch }: PinRowProp
         )}
       </label>
       {mismatch && (
-        <p className="ml-[4.75rem] mt-1 text-[11px] text-red-300/90">两次密码不一致</p>
+        <p className="ml-[4.75rem] mt-1 text-[11px] text-red-300/90">{t("settings.passwordLock.notMatch")}</p>
       )}
     </div>
   );
@@ -690,7 +738,7 @@ function UpdateDialog({
             <Download size={20} />
           </div>
           <div>
-            <h3 className="text-base font-medium text-cream">发现新版本</h3>
+            <h3 className="text-base font-medium text-cream">{t("settings.about.hasNewVersion")}</h3>
             <p className="text-xs text-muted">v{info.version}</p>
           </div>
         </div>
@@ -704,7 +752,7 @@ function UpdateDialog({
             onClick={onClose}
             className="flex-1 rounded-full border border-line bg-ink-800 py-2.5 text-sm text-mist transition-colors hover:bg-ink-700"
           >
-            稍后
+            {t("common.cancel")}
           </button>
           <button
             onClick={() => {
@@ -716,7 +764,7 @@ function UpdateDialog({
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber px-4 py-2.5 text-sm text-ink-950 transition-colors hover:bg-amber-glow"
           >
             <Download size={15} />
-            下载更新
+            {t("settings.about.downloadUpdate", "下载更新")}
           </button>
         </div>
       </div>
@@ -751,7 +799,7 @@ function ConfirmDialog({
             onClick={onCancel}
             className="flex-1 rounded-full border border-line bg-ink-800 py-2.5 text-sm text-mist transition-colors hover:bg-ink-700"
           >
-            取消
+            {t("common.cancel")}
           </button>
           <button
             onClick={onConfirm}
@@ -804,19 +852,19 @@ export function CloudSyncCard() {
             <Cloud size={18} />
           </div>
           <div>
-            <div className="text-sm text-cream">云端账户</div>
-            <div className="text-xs text-muted">未登录</div>
+            <div className="text-sm text-cream">{t("settings.cloudSync.notLoggedIn", "云端账户")}</div>
+            <div className="text-xs text-muted">{t("settings.cloudSync.notLoggedIn")}</div>
           </div>
         </div>
         <p className="mb-3 text-xs leading-relaxed text-muted">
-          登录后可上传/下载数据，多设备互通。密码锁仅保存在本机。
+          {t("settings.auth.syncHint")} {t("settings.auth.passwordLockLocalOnly")}
         </p>
         <button
           onClick={openAuth}
           className="flex w-full items-center justify-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-2.5 text-sm text-sky-300 transition-colors hover:bg-sky-500/20"
         >
           <Cloud size={15} />
-          登录 / 注册
+          {t("auth.loginOrRegister")}
         </button>
       </div>
     );
@@ -827,14 +875,14 @@ export function CloudSyncCard() {
     setLoading(true);
     try {
       const undo = await uploadToCloud(user.id);
-      toast("已上传到云端", "success", undo ? { label: "撤销", onAction: async () => {
+      toast(t("settings.cloudSync.uploadSuccess"), "success", undo ? { label: t("common.undo"), onAction: async () => {
         await undo();
-        toast("已撤销上传", "success");
+        toast(t("settings.cloudSync.uploadUndone", "已撤销上传"), "success");
         refreshCloudCount();
       } } : undefined);
       refreshCloudCount();
     } catch (e: any) {
-      toast(e?.message || "上传失败", "warn");
+      toast(e?.message || t("settings.cloudSync.uploadFailed", "上传失败"), "warn");
     } finally {
       setLoading(false);
     }
@@ -845,14 +893,14 @@ export function CloudSyncCard() {
     setLoading(true);
     try {
       const undo = await downloadFromCloud(user.id);
-      toast("已从云端下载", "success", undo ? { label: "撤销", onAction: () => {
+      toast(t("settings.cloudSync.downloadSuccess"), "success", undo ? { label: t("common.undo"), onAction: () => {
         undo();
-        toast("已撤销下载", "success");
+        toast(t("settings.cloudSync.downloadUndone", "已撤销下载"), "success");
         refreshCloudCount();
       } } : undefined);
       refreshCloudCount();
     } catch (e: any) {
-      toast(e?.message || "下载失败", "warn");
+      toast(e?.message || t("settings.cloudSync.downloadFailed", "下载失败"), "warn");
     } finally {
       setLoading(false);
     }
@@ -879,33 +927,33 @@ export function CloudSyncCard() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 text-sm text-cream">
-              已连接云端
+              {t("settings.cloudSync.connected", "已连接云端")}
               <AutoStatusBadge status={autoStatus} />
             </div>
-            <div className="truncate text-xs text-muted">{user.email}</div>
+            <div className="truncate text-xs text-muted">{t("settings.auth.email", user.email || "")}</div>
           </div>
         </div>
         {autoStatus === "error" && (
           <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2">
             <div className="truncate text-[11px] text-rose-200">
-              自动同步失败：{getAutoSyncError() || "未知错误"}
+              {t("settings.cloudSync.syncFailed")}：{getAutoSyncError() || t("common.unknownError")}
             </div>
             <button
               onClick={() => triggerAutoSync({ full: false })}
               className="shrink-0 rounded-md bg-rose-500/15 px-2 py-1 text-[10px] font-medium text-rose-200 ring-1 ring-rose-500/30 hover:bg-rose-500/25"
             >
-              重试
+              {t("common.retry")}
             </button>
           </div>
         )}
         <div className="mb-3 flex items-center justify-between text-xs text-muted">
-          <span>本地 {records.length} 条记录</span>
-          <span>云端 {cloudCount !== null ? `${cloudCount} 条` : "…"}</span>
+          <span>{t("settings.cloudSync.localCount", "本地 {0} 条记录", records.length)}</span>
+          <span>{t("settings.cloudSync.cloudCount", "云端 {0} 条", cloudCount !== null ? cloudCount : 0)}</span>
         </div>
         <div className="mb-3 rounded-xl border border-dashed border-emerald-500/25 bg-emerald-500/5 p-2.5">
           <div className="flex items-center gap-2 text-[11px] text-emerald-200/90">
             <RefreshCw size={12} />
-            <span>修改记录 / 设置 / 资料后 1.5 秒自动同步到云端</span>
+            <span>{t("settings.cloudSync.autoSyncHint", "修改记录 / 设置 / 资料后 1.5 秒自动同步到云端")}</span>
           </div>
         </div>
         <div className="space-y-2">
@@ -915,58 +963,58 @@ export function CloudSyncCard() {
             className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2.5 text-sm text-emerald-300 transition-colors hover:bg-emerald-500/25 disabled:opacity-60"
           >
             <RefreshCw size={14} />
-            {loading ? "处理中…" : "立即同步（增量）"}
+            {loading ? t("common.processing") : t("settings.cloudSync.syncIncremental", "立即同步（增量）")}
           </button>
           <button
             onClick={() => setConfirm("upload")}
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-emerald-500/40 hover:text-emerald-300 disabled:opacity-60"
           >
-            {loading ? "处理中…" : "强制覆盖上传"}
+            {loading ? t("common.processing") : t("settings.cloudSync.forceUpload", "强制覆盖上传")}
           </button>
           <button
             onClick={() => setConfirm("download")}
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:border-emerald-500/40 hover:text-emerald-300 disabled:opacity-60"
           >
-            {loading ? "处理中…" : "从云端下载"}
+            {loading ? t("common.processing") : t("settings.cloudSync.downloadFromCloud", "从云端下载")}
           </button>
           <button
             onClick={() => setConfirm("logout")}
             className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-rose-300/80 transition-colors hover:border-rose-500/40 hover:text-rose-300"
           >
-            退出登录
+            {t("settings.auth.logout")}
           </button>
         </div>
       </div>
 
       {confirm === "upload" && (
         <ConfirmDialog
-          title="上传到云端"
-          message="将用本地数据覆盖云端所有记录。云端原有数据会被替换，5 秒内可撤销。"
-          confirmLabel="确认上传"
+          title={t("settings.cloudSync.uploadTitle", "上传到云端")}
+          message={t("settings.cloudSync.uploadMessage", "将用本地数据覆盖云端所有记录。云端原有数据会被替换，5 秒内可撤销。")}
+          confirmLabel={t("settings.cloudSync.confirmUpload", "确认上传")}
           onConfirm={doUpload}
           onCancel={() => setConfirm(null)}
         />
       )}
       {confirm === "download" && (
         <ConfirmDialog
-          title="从云端下载"
-          message="将用云端数据覆盖本地所有记录。本地原有数据会被替换，5 秒内可撤销。"
-          confirmLabel="确认下载"
+          title={t("settings.cloudSync.downloadTitle", "从云端下载")}
+          message={t("settings.cloudSync.downloadMessage", "将用云端数据覆盖本地所有记录。本地原有数据会被替换，5 秒内可撤销。")}
+          confirmLabel={t("settings.cloudSync.confirmDownload", "确认下载")}
           onConfirm={doDownload}
           onCancel={() => setConfirm(null)}
         />
       )}
       {confirm === "logout" && (
         <ConfirmDialog
-          title="退出登录"
-          message="确定要退出云端账户吗？本地数据不会被删除。"
-          confirmLabel="退出登录"
+          title={t("settings.cloudSync.logoutTitle", "退出登录")}
+          message={t("settings.cloudSync.logoutMessage", "确定要退出云端账户吗？本地数据不会被删除。")}
+          confirmLabel={t("settings.auth.logout")}
           onConfirm={async () => {
             setConfirm(null);
             await signOut();
-            toast("已退出登录", "success");
+            toast(t("auth.logoutSuccess"), "success");
           }}
           onCancel={() => setConfirm(null)}
         />
@@ -977,11 +1025,11 @@ export function CloudSyncCard() {
 
 function AutoStatusBadge({ status }: { status: AutoSyncStatus }) {
   const cfg: Record<AutoSyncStatus, { text: string; cls: string }> = {
-    idle:    { text: "空闲",    cls: "bg-ink-800 text-muted ring-1 ring-line/60" },
-    waiting: { text: "等待中",  cls: "bg-amber/15 text-amber-glow ring-1 ring-amber/30" },
-    syncing: { text: "同步中",  cls: "bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30" },
-    synced:  { text: "已同步",  cls: "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/30" },
-    error:   { text: "失败",    cls: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30" },
+    idle:    { text: t("settings.cloudSync.idle", "空闲"),    cls: "bg-ink-800 text-muted ring-1 ring-line/60" },
+    waiting: { text: t("settings.cloudSync.waiting"),  cls: "bg-amber/15 text-amber-glow ring-1 ring-amber/30" },
+    syncing: { text: t("settings.cloudSync.syncing"),  cls: "bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30" },
+    synced:  { text: t("settings.cloudSync.synced"),  cls: "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/30" },
+    error:   { text: t("settings.cloudSync.failed"),    cls: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30" },
   };
   const c = cfg[status];
   return (

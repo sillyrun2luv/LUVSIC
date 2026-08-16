@@ -1,6 +1,6 @@
 import { Capacitor, Plugin } from "@capacitor/core";
 
-export type AppIconType = "mushroom" | "abalone";
+export type AppIconType = "mushroom" | "abalone" | "default";
 
 interface IconSwitchPlugin extends Plugin {
   switchIcon(options: { icon: AppIconType }): Promise<{ success: boolean; icon: AppIconType }>;

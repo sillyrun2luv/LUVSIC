@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useUIStore } from "@/store/useUIStore";
 import { useRecordStore } from "@/store/useRecordStore";
 import { toast } from "@/store/useToastStore";
+import { t } from "@/store/useI18nStore";
 import RecordDetailSheet from "@/components/RecordDetailSheet";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { RecordEntry } from "@/types";
@@ -50,11 +51,11 @@ export default function RecordDetailProvider() {
     deleteRecord(snapshot.id);
     setConfirmOpen(false);
     closeDetail();
-    toast("已删除该记录", "warn", {
-      label: "撤销",
+    toast(t("recordDetail.deleted"), "warn", {
+      label: t("common.undo"),
       onAction: () => {
         restoreRecord(snapshot);
-        toast("已恢复", "success");
+        toast(t("recordDetail.restored"), "success");
       },
     });
   };
@@ -70,9 +71,9 @@ export default function RecordDetailProvider() {
       <ConfirmDialog
         open={confirmOpen}
         danger
-        title="删除这条记录？"
-        message="删除后 5 秒内可点「撤销」恢复，超过后无法找回。"
-        confirmText="确认删除"
+        title={t("recordDetail.deleteTitle")}
+        message={t("recordDetail.deleteMessage")}
+        confirmText={t("recordDetail.confirmDelete")}
         onConfirm={handleConfirmDelete}
         onCancel={() => setConfirmOpen(false)}
       />

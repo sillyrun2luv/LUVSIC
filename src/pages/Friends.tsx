@@ -16,18 +16,22 @@ import {
   Sparkles,
   Trophy,
   Swords,
+  Bell,
 } from "lucide-react";
 import { useFriendStore } from "@/store/useFriendStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import type { PublicUser } from "@/types";
 import type { PendingRequest } from "@/lib/friends";
 import { cn } from "@/lib/utils";
 import LeaderboardPanel from "@/components/LeaderboardPanel";
+import ReminderList from "@/components/ReminderList";
 import Avatar, { buildTextAvatar } from "@/components/Avatar";
+import { t } from "@/store/useI18nStore";
 
-type TabKey = "friends" | "pending" | "search";
+type TabKey = "friends" | "pending" | "search" | "reminders";
 type MainView = "social" | "leaderboard";
 
 export default function Friends() {
@@ -37,6 +41,7 @@ export default function Friends() {
   const openProfileSetup = useUIStore((s) => s.openProfileSetup);
   const openPK = useUIStore((s) => s.openPK);
   const isLoggedIn = useAuthStore((s) => !!s.user?.id);
+  const canRemind = isSupabaseConfigured && isLoggedIn;
   const profileName = useProfileStore((s) => s.name);
 
   const loading = useFriendStore((s) => s.loading);
@@ -47,6 +52,7 @@ export default function Friends() {
   const incoming = useFriendStore((s) => s.incoming);
   const outgoing = useFriendStore((s) => s.outgoing);
   const pendingCount = useFriendStore((s) => s.pendingCount);
+  const reminderUnread = useFriendStore((s) => s.reminderUnread);
 
   const searchKeyword = useFriendStore((s) => s.searchKeyword);
   const searching = useFriendStore((s) => s.searching);
@@ -93,8 +99,8 @@ export default function Friends() {
   }, [isLoggedIn, view, initialLoaded, refreshAll]);
 
   const pendingTabLabel = useMemo(() => {
-    if (pendingCount > 0) return `待审核 · ${pendingCount}`;
-    return "待审核";
+    if (pendingCount > 0) return t("friends.pendingReview", pendingCount);
+    return t("friends.pendingTab");
   }, [pendingCount]);
 
   const incomingIdByFrom = useMemo(() => {
@@ -115,19 +121,19 @@ export default function Friends() {
         <div>
           <div className="flex items-center gap-2 text-xs text-muted">
             <Users size={14} className="text-teal-300" />
-            自慰星球
+            {t("friends.title")}
           </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-cream">
-            一群人的私密宇宙 🪐
+            {t("friends.subtitle")}
           </h1>
           <p className="mt-1 text-xs text-muted">
-            加好友、看排行，看见自己也看见同行的人。
+            {t("friends.description")}
           </p>
         </div>
         {mainView === "social" && (
           <button
             onClick={refreshAll}
-            title="刷新"
+            title={t("friends.refresh")}
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-full border border-line/70 bg-ink-900/70 text-mist transition-colors hover:border-teal-500/40 hover:text-teal-300",
               loading && "pointer-events-none opacity-70",
@@ -150,10 +156,10 @@ export default function Friends() {
           )}
         >
           <Users size={14} />
-          社交
+          {t("friends.social")}
           {pendingCount > 0 && (
             <span className="ml-0.5 rounded-full bg-rose-500/80 px-1.5 py-0.5 text-[9px] font-semibold text-white">
-              {pendingCount > 99 ? "99+" : pendingCount}
+              {pendingCount > 99 ? t("friends.pendingBadge") : pendingCount}
             </span>
           )}
         </button>
@@ -167,7 +173,7 @@ export default function Friends() {
           )}
         >
           <Trophy size={14} />
-          排行榜
+          {t("friends.leaderboard")}
         </button>
       </div>
 
@@ -181,38 +187,43 @@ export default function Friends() {
             <LoggedOutGate onLogin={openAuth} onGoSettings={openSettings} />
           ) : (
             <>
-              {/* 搜索条 */}
-              <SearchBar
-                value={localKw}
-                onChange={(v) => {
-                  setLocalKw(v);
-                  if (v.trim()) setTab("search");
-                }}
-                onClear={() => {
-                  setLocalKw("");
-                  clearSearch();
-                  setTab("friends");
-                }}
-                pendingCount={pendingCount}
-              />
+              {/* 搜索条 + 未设置昵称提示：收件箱 Tab 不需要 */}
+              {tab !== "reminders" && (
+                <>
+                  {/* 搜索条 */}
+                  <SearchBar
+                    value={localKw}
+                    onChange={(v) => {
+                      setLocalKw(v);
+                      if (v.trim()) setTab("search");
+                    }}
+                    onClear={() => {
+                      setLocalKw("");
+                      clearSearch();
+                      setTab("friends");
+                    }}
+                    pendingCount={pendingCount}
+                  />
 
-              {/* 未设置昵称提示 */}
-              {profileName === "我" && (
-                <div className="flex items-center gap-3 rounded-xl border border-amber/30 bg-amber/[0.07] p-3.5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber/15 text-amber-glow">
-                    <Sparkles size={16} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm text-cream">完善资料，让好友能搜到你</div>
-                    <div className="text-xs text-muted">设置昵称和头像后，好友功能才能正常使用</div>
-                  </div>
-                  <button
-                    onClick={openProfileSetup}
-                    className="shrink-0 rounded-lg bg-amber px-3 py-2 text-sm font-medium text-ink-950 transition-colors hover:bg-amber-glow"
-                  >
-                    去设置
-                  </button>
-                </div>
+                  {/* 未设置昵称提示 */}
+                  {profileName === "我" && (
+                    <div className="flex items-center gap-3 rounded-xl border border-amber/30 bg-amber/[0.07] p-3.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber/15 text-amber-glow">
+                        <Sparkles size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm text-cream">{t("profileSetup.title")}</div>
+                        <div className="text-xs text-muted">{t("profileSetup.nicknameDesc")}</div>
+                      </div>
+                      <button
+                        onClick={openProfileSetup}
+                        className="shrink-0 rounded-lg bg-amber px-3 py-2 text-sm font-medium text-ink-950 transition-colors hover:bg-amber-glow"
+                      >
+                        {t("common.edit")}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Tab 切换 */}
@@ -222,7 +233,7 @@ export default function Friends() {
                 tabs={[
                   {
                     key: "friends",
-                    label: `我的好友 · ${friends.length}`,
+                    label: t("friends.myFriends", friends.length),
                     icon: UserCheck,
                     accent: "teal",
                   },
@@ -235,9 +246,16 @@ export default function Friends() {
                   },
                   {
                     key: "search",
-                    label: "搜索",
+                    label: t("common.search"),
                     icon: Search,
                     accent: "violet",
+                  },
+                  {
+                    key: "reminders",
+                    label: t("bottomNav.reminders"),
+                    icon: Bell,
+                    accent: "rose",
+                    badge: reminderUnread,
                   },
                 ]}
               />
@@ -251,6 +269,7 @@ export default function Friends() {
                   onRequestRemove={(uid, name) => setDeleteTarget({ userId: uid, name })}
                   onOpenDetail={openFriendDetail}
                   onOpenPK={openPK}
+                  canRemind={canRemind}
                 />
               )}
               {tab === "pending" && (
@@ -276,6 +295,7 @@ export default function Friends() {
                   outgoingIdByTo={outgoingIdByTo}
                 />
               )}
+              {tab === "reminders" && <ReminderList />}
             </>
           )}
         </>
@@ -305,25 +325,25 @@ function LoggedOutGate({ onLogin, onGoSettings }: { onLogin: () => void; onGoSet
           <div className="mb-2 flex items-center gap-2 text-teal-300">
             <Users size={16} />
             <span className="text-xs font-medium uppercase tracking-wider text-teal-300/80">
-              需要登录
+              {t("friends.needLogin")}
             </span>
           </div>
-          <h2 className="text-xl font-semibold text-cream">登录后才能加好友 👋</h2>
+          <h2 className="text-xl font-semibold text-cream">{t("friends.loginToAddFriends")}</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-muted">
-            好友数据存在云端，和你的账号绑定。登录后还可以跨设备同步记录、设置、个人资料。
+            {t("friends.loginBenefits")}
           </p>
           <ul className="mt-3 space-y-1 text-xs text-muted">
             <li className="flex items-center gap-2">
               <CheckCircle2 size={12} className="text-teal-300 shrink-0" />
-              昵称搜索加好友
+              {t("friends.searchFriendsHint")}
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 size={12} className="text-teal-300 shrink-0" />
-              发送 / 接受 / 拒绝 / 撤销 申请
+              {t("friends.requestActions")}
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 size={12} className="text-teal-300 shrink-0" />
-              随时切换：是否允许被搜索 / 好友是否能看到我的统计
+              {t("friends.privacyToggle")}
             </li>
           </ul>
         </div>
@@ -333,13 +353,13 @@ function LoggedOutGate({ onLogin, onGoSettings }: { onLogin: () => void; onGoSet
             className="flex items-center gap-2 rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-teal-500/20 transition hover:bg-teal-400"
           >
             <LogIn size={16} />
-            登录 / 注册
+            {t("friends.loginOrRegister")}
           </button>
           <button
             onClick={onGoSettings}
             className="rounded-xl border border-line/80 bg-ink-900/80 px-4 py-2.5 text-sm text-mist transition hover:border-amber/40 hover:text-amber-glow"
           >
-            打开设置
+            {t("friends.openSettings")}
           </button>
         </div>
       </div>
@@ -365,13 +385,13 @@ function SearchBar({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="搜索昵称加好友（至少 2 字）"
+          placeholder={t("friends.searchPlaceholder")}
           className="w-full bg-transparent text-sm text-cream placeholder:text-muted/80 focus:outline-none"
         />
         {value && (
           <button
             onClick={onClear}
-            title="清除"
+            title={t("common.back")}
             className="flex h-6 w-6 items-center justify-center rounded-full text-muted transition hover:bg-ink-700 hover:text-mist"
           >
             <ArrowLeft size={14} />
@@ -381,7 +401,7 @@ function SearchBar({
       {pendingCount > 0 && (
         <div className="mt-2 flex items-center gap-2 rounded-xl bg-amber/10 px-3 py-2 text-xs text-amber-glow ring-1 ring-amber/20">
           <Clock size={14} />
-          有 <b>{pendingCount}</b> 条好友申请等着你处理～
+          {t("friends.pendingNotice", pendingCount)}
         </div>
       )}
     </div>
@@ -392,7 +412,7 @@ interface TabDef {
   key: TabKey;
   label: string;
   icon: typeof Users;
-  accent: "teal" | "amber" | "violet";
+  accent: "teal" | "amber" | "violet" | "rose";
   badge?: number;
 }
 function Tabs({
@@ -408,9 +428,10 @@ function Tabs({
     teal: "bg-teal-500/15 text-teal-200 ring-1 ring-teal-500/30",
     amber: "bg-amber/15 text-amber-glow ring-1 ring-amber/30",
     violet: "bg-violet-500/15 text-violet-200 ring-1 ring-violet-500/30",
+    rose: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30",
   };
   return (
-    <div className="grid grid-cols-3 gap-2 rounded-2xl border border-line/70 bg-ink-900/50 p-1.5">
+    <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-line/70 bg-ink-900/50 p-1.5">
       {tabs.map((t) => {
         const active = value === t.key;
         const Icon = t.icon;
@@ -440,6 +461,7 @@ function FriendsList({
   onRequestRemove,
   onOpenDetail,
   onOpenPK,
+  canRemind,
 }: {
   loading: boolean;
   initialLoaded: boolean;
@@ -447,16 +469,17 @@ function FriendsList({
   onRequestRemove: (uid: string, name: string) => void;
   onOpenDetail: (userId: string, name: string, avatar: string) => void;
   onOpenPK: (userId: string, name: string, avatar: string) => void;
+  canRemind: boolean;
 }) {
   if (!initialLoaded || (loading && items.length === 0)) {
-    return <SkeletonCard count={3} title="正在加载好友..." />;
+    return <SkeletonCard count={3} title={t("common.loading")} />;
   }
   if (items.length === 0) {
     return (
       <EmptyState
         icon={Users}
-        title="还没有好友"
-        desc="用上方搜索框输入对方昵称（至少 2 字），找到后发送申请。"
+        title={t("friends.noFriends")}
+        desc={t("friends.noFriendsHint")}
         accent="teal"
       />
     );
@@ -472,7 +495,7 @@ function FriendsList({
             <div className="flex shrink-0 items-center gap-1.5">
               <button
                 onClick={() => onOpenPK(u.userId, u.name, u.avatar)}
-                title="发起 PK：对比总时长 & 近 100h 时长"
+                title={t("pk.title")}
                 className="flex h-8 items-center gap-1 rounded-lg bg-amber px-2.5 text-xs font-semibold text-ink-950 transition hover:bg-amber-glow"
               >
                 <Swords size={13} />
@@ -480,11 +503,20 @@ function FriendsList({
               </button>
               <button
                 onClick={() => onRequestRemove(u.userId, u.name)}
-                title="删除好友"
+                title={t("common.delete")}
                 className="flex h-8 items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 text-xs text-rose-300 transition hover:bg-rose-500/20"
               >
                 <UserX size={13} />
-                删除
+                {t("common.delete")}
+              </button>
+              <button
+                onClick={() => onOpenDetail(u.userId, u.name, u.avatar)}
+                disabled={!canRemind}
+                title={canRemind ? t("friendReminder.title") : t("friendReminder.lockedHint")}
+                className="flex h-8 items-center gap-1 rounded-lg border border-teal-500/20 bg-teal-500/10 px-2.5 text-xs text-teal-200 transition hover:bg-teal-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Send size={13} />
+                {t("friendReminder.buttonLabel")}
               </button>
             </div>
           }
@@ -513,14 +545,14 @@ function PendingList({
   onCancel: (id: string) => Promise<void>;
 }) {
   if (!initialLoaded || (loading && incoming.length === 0 && outgoing.length === 0)) {
-    return <SkeletonCard count={3} title="加载申请列表..." />;
+    return <SkeletonCard count={3} title={t("common.loading")} />;
   }
   if (incoming.length === 0 && outgoing.length === 0) {
     return (
       <EmptyState
         icon={Clock}
-        title="没有待处理的申请"
-        desc="去上方「搜索」Tab 找找朋友，或者把昵称分享给朋友让 TA 搜你。"
+        title={t("friends.noPending")}
+        desc={t("friends.noPendingHint")}
         accent="amber"
       />
     );
@@ -530,14 +562,14 @@ function PendingList({
       {incoming.length > 0 && (
         <section>
           <SectionLabel icon={<UserPlus size={12} />} color="amber" count={incoming.length}>
-            收到的申请
+            {t("friends.incomingRequests")}
           </SectionLabel>
           <div className="space-y-2">
             {incoming.map((r) => (
               <FriendRow
                 key={r.friendshipId}
                 user={r.user}
-                meta={`${formatDate(r.createdAt)} 申请加你`}
+                meta={`${formatDate(r.createdAt)}`}
                 action={
                   <div className="flex shrink-0 gap-1.5">
                     <button
@@ -545,14 +577,14 @@ function PendingList({
                       className="flex h-8 items-center gap-1 rounded-lg border border-line/70 bg-ink-800/60 px-2.5 text-xs text-muted transition hover:border-rose-500/30 hover:text-rose-300"
                     >
                       <XCircle size={13} />
-                      拒绝
+                      {t("common.reject")}
                     </button>
                     <button
                       onClick={() => onAccept(r.friendshipId)}
                       className="flex h-8 items-center gap-1 rounded-lg bg-teal-500 px-2.5 text-xs font-medium text-white transition hover:bg-teal-400"
                     >
                       <CheckCircle2 size={13} />
-                      接受
+                      {t("common.accept")}
                     </button>
                   </div>
                 }
@@ -564,21 +596,21 @@ function PendingList({
       {outgoing.length > 0 && (
         <section>
           <SectionLabel icon={<Send size={12} />} color="violet" count={outgoing.length}>
-            发出的申请
+            {t("friends.outgoingRequests")}
           </SectionLabel>
           <div className="space-y-2">
             {outgoing.map((r) => (
               <FriendRow
                 key={r.friendshipId}
                 user={r.user}
-                meta={`${formatDate(r.createdAt)} 发出，等待对方处理`}
+                meta={`${formatDate(r.createdAt)}`}
                 action={
                   <button
                     onClick={() => onCancel(r.friendshipId)}
                     className="flex h-8 items-center gap-1 rounded-lg border border-line/70 bg-ink-800/60 px-2.5 text-xs text-muted transition hover:border-violet-500/30 hover:text-violet-300"
                   >
                     <XCircle size={13} />
-                    撤销
+                    {t("friends.cancelRequest")}
                   </button>
                 }
               />
@@ -614,21 +646,21 @@ function SearchResults({
     return (
       <EmptyState
         icon={Search}
-        title="输入昵称开始搜索"
-        desc="至少 2 字。你可以先去「设置 → 社交隐私」确认自己是否打开了被搜索开关。"
+        title={t("friends.startSearching")}
+        desc={t("friends.searchHint")}
         accent="violet"
       />
     );
   }
   if (searching) {
-    return <SkeletonCard count={3} title={`正在搜索「${keyword}」...`} />;
+    return <SkeletonCard count={3} title={t("friends.searching", keyword)} />;
   }
   if (results.length === 0) {
     return (
       <EmptyState
         icon={MoreHorizontal}
-        title="没搜到任何人"
-        desc={`昵称没有包含「${keyword}」且开启了被搜索的用户。也请确认你自己已登录。`}
+        title={t("friends.noSearchResults")}
+        desc={t("friends.noSearchHint", keyword)}
         accent="violet"
       />
     );
@@ -641,10 +673,10 @@ function SearchResults({
         let action: React.ReactNode;
         switch (u.relation) {
           case "self":
-            action = <Pill color="ink">这是你</Pill>;
+            action = <Pill color="ink">{t("friends.thisIsYou")}</Pill>;
             break;
           case "friend":
-            action = <Pill color="teal">已是好友</Pill>;
+            action = <Pill color="teal">{t("friends.alreadyFriend")}</Pill>;
             break;
           case "pending_to_me":
             action = incId ? (
@@ -653,10 +685,10 @@ function SearchResults({
                 className="flex h-8 items-center gap-1 rounded-lg bg-teal-500 px-2.5 text-xs font-medium text-white transition hover:bg-teal-400"
               >
                 <CheckCircle2 size={13} />
-                通过申请
+                {t("friends.acceptRequest")}
               </button>
             ) : (
-              <Pill color="amber">对方已申请</Pill>
+              <Pill color="amber">{t("friends.alreadyApplied")}</Pill>
             );
             break;
           case "pending_from_me":
@@ -666,10 +698,10 @@ function SearchResults({
                 className="flex h-8 items-center gap-1 rounded-lg border border-line/70 bg-ink-800/60 px-2.5 text-xs text-muted transition hover:border-violet-500/30 hover:text-violet-300"
               >
                 <XCircle size={13} />
-                撤销
+                {t("friends.cancelRequest")}
               </button>
             ) : (
-              <Pill color="violet">等待对方通过</Pill>
+              <Pill color="violet">{t("friends.waitingApproval")}</Pill>
             );
             break;
           case "stranger":
@@ -680,7 +712,7 @@ function SearchResults({
                 className="flex h-8 items-center gap-1 rounded-lg bg-amber px-2.5 text-xs font-medium text-ink-950 transition hover:bg-amber-glow"
               >
                 <UserPlus size={13} />
-                加好友
+                {t("friends.addFriend")}
               </button>
             );
         }
@@ -709,7 +741,7 @@ function FriendRow({
       {onAvatarClick && isFriend ? (
         <button
           onClick={onAvatarClick}
-          title="点我发起 PK：对比总时长 & 近 100h"
+          title={t("pk.title")}
           className="group shrink-0 transition hover:scale-105 active:scale-100"
         >
           <Avatar
@@ -722,11 +754,11 @@ function FriendRow({
         <Avatar value={user.avatar} size={44} />
       )}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium text-cream">{user.name}</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="break-words text-sm font-medium leading-snug text-cream">{user.name}</span>
           {rel && <span className="shrink-0">{rel}</span>}
         </div>
-        <div className="mt-0.5 truncate text-[11px] text-muted">
+        <div className="mt-0.5 break-words text-[11px] leading-snug text-muted">
           {meta || relationDesc(user.relation)}
         </div>
       </div>
@@ -738,13 +770,13 @@ function FriendRow({
 function relationBadge(r: PublicUser["relation"]) {
   switch (r) {
     case "friend":
-      return <Pill color="teal">好友</Pill>;
+      return <Pill color="teal">{t("common.friend")}</Pill>;
     case "pending_from_me":
-      return <Pill color="violet">我发出</Pill>;
+      return <Pill color="violet">{t("common.sentByMe")}</Pill>;
     case "pending_to_me":
-      return <Pill color="amber">我收到</Pill>;
+      return <Pill color="amber">{t("common.receivedByMe")}</Pill>;
     case "self":
-      return <Pill color="ink">我</Pill>;
+      return <Pill color="ink">{t("common.me")}</Pill>;
     default:
       return null;
   }
@@ -752,13 +784,13 @@ function relationBadge(r: PublicUser["relation"]) {
 function relationDesc(r: PublicUser["relation"]) {
   switch (r) {
     case "friend":
-      return "互相关注的好友";
+      return t("friends.mutualFriends");
     case "pending_from_me":
-      return "等待对方通过申请";
+      return t("friends.waitingForOther");
     case "pending_to_me":
-      return "等待你处理申请";
+      return t("friends.waitingForYou");
     case "self":
-      return "当前登录账号";
+      return t("friends.currentAccount");
     default:
       return "";
   }
@@ -874,10 +906,10 @@ function formatDate(ts: number) {
     const d = new Date(ts);
     const now = new Date();
     const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
-    if (diff < 60) return "刚刚";
-    if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`;
-    if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} 天前`;
+    if (diff < 60) return t("common.justNow");
+    if (diff < 3600) return t("date.intervalMinutesAgo", Math.floor(diff / 60));
+    if (diff < 86400) return t("date.intervalHoursAgo", Math.floor(diff / 3600));
+    if (diff < 86400 * 7) return t("date.intervalDaysAgo", Math.floor(diff / 86400));
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     return `${d.getFullYear()}-${mm}-${dd}`;
@@ -899,7 +931,7 @@ function RemoveFriendDialog({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[110] flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-[110] pb-[72px] sm:pb-0 flex items-end justify-center sm:items-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/75 backdrop-blur-sm"
         onClick={onCancel}
@@ -911,14 +943,12 @@ function RemoveFriendDialog({
               <UserX size={20} />
             </div>
             <div>
-              <div className="font-display text-lg text-cream">解除好友关系</div>
-              <div className="mt-0.5 text-xs text-muted">此操作可以撤销（重新加回来）</div>
+              <div className="font-display text-lg text-cream">{t("friends.removeFriend")}</div>
+              <div className="mt-0.5 text-xs text-muted">{t("friends.reversibleHint")}</div>
             </div>
           </div>
           <p className="mb-5 rounded-xl border border-line/70 bg-ink-800/50 p-3 text-sm leading-relaxed text-mist">
-            确定要和 <span className="font-medium text-cream">「{name}」</span> 解除好友关系吗？
-            <br />
-            <span className="text-xs text-muted">解除后对方将看不到彼此的统计与排行榜。</span>
+            {t("friends.removeConfirm", name)}
           </p>
           <div className="flex gap-2">
             <button
@@ -926,14 +956,14 @@ function RemoveFriendDialog({
               disabled={busy}
               className="flex-1 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-mist transition hover:bg-ink-700 disabled:opacity-60"
             >
-              再想想
+              {t("friends.thinkAgain")}
             </button>
             <button
               onClick={onConfirm}
               disabled={busy}
               className="flex-1 rounded-full bg-rose-500 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-400 disabled:opacity-60"
             >
-              {busy ? "处理中…" : "确认解除"}
+              {busy ? t("friends.processing") : t("friends.confirmRemove")}
             </button>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Heart, ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { t } from "@/store/useI18nStore";
 import {
   DONATE_ALIPAY_URL,
   DONATE_WECHAT_URL,
@@ -13,8 +14,8 @@ import {
 type Channel = "alipay" | "wechat";
 
 const CHANNELS: { key: Channel; label: string; img: string }[] = [
-  { key: "alipay", label: "支付宝", img: DONATE_ALIPAY_URL },
-  { key: "wechat", label: "微信", img: DONATE_WECHAT_URL },
+  { key: "alipay", label: "alipay_channel", img: DONATE_ALIPAY_URL },
+  { key: "wechat", label: "wechat_channel", img: DONATE_WECHAT_URL },
 ];
 
 export default function DonateSheet() {
@@ -43,6 +44,7 @@ export default function DonateSheet() {
   const current = CHANNELS.find((c) => c.key === channel)!;
   const errored = imgError[channel];
   const hasUrl = current.img.length > 0;
+  const channelLabel = channel === "alipay" ? t("donate.alipay") : t("donate.wechat");
 
   return (
     <>
@@ -52,13 +54,13 @@ export default function DonateSheet() {
         className="flex w-full items-center justify-center gap-2 rounded-full border border-amber/40 bg-amber/10 px-4 py-2.5 text-sm text-amber-glow transition-colors hover:bg-amber/20"
       >
         <Heart size={15} />
-        请作者喝杯咖啡
+        {t("donate.title")}
       </button>
 
       {/* 弹窗通过 Portal 渲染到 body，避免父级 transform 干扰 fixed 定位 */}
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-[120] flex items-end justify-center">
+          <div className="fixed inset-0 z-[120] pb-[72px] flex items-end justify-center">
             <div
               className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
               onClick={() => setOpen(false)}
@@ -68,7 +70,7 @@ export default function DonateSheet() {
               <button
                 onClick={() => setOpen(false)}
                 className="absolute right-4 top-4 text-muted hover:text-mist"
-                aria-label="关闭"
+                aria-label={t("common.close")}
               >
                 <X size={18} />
               </button>
@@ -88,6 +90,7 @@ export default function DonateSheet() {
               <div className="mb-4 flex justify-center gap-2">
                 {CHANNELS.map((c) => {
                   const active = c.key === channel;
+                  const cLabel = c.key === "alipay" ? t("donate.alipay") : t("donate.wechat");
                   return (
                     <button
                       key={c.key}
@@ -99,7 +102,7 @@ export default function DonateSheet() {
                           : "border-line text-muted hover:border-amber/40 hover:text-mist",
                       )}
                     >
-                      {c.label}
+                      {cLabel}
                     </button>
                   );
                 })}
@@ -111,7 +114,7 @@ export default function DonateSheet() {
                   {hasUrl && !errored ? (
                     <img
                       src={current.img}
-                      alt={`${current.label}收款码`}
+                      alt={`${channelLabel}${t("donate.qrcodeAlt")}`}
                       className="h-full w-full object-contain"
                       onError={() =>
                         setImgError((s) => ({ ...s, [channel]: true }))
@@ -120,9 +123,9 @@ export default function DonateSheet() {
                   ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center">
                       <ImageOff size={32} className="text-muted/60" />
-                      <p className="text-xs text-muted">二维码即将上线</p>
+                      <p className="text-xs text-muted">{t("donate.qrcodeComingSoon")}</p>
                       <p className="text-[10px] text-muted/60">
-                        {hasUrl ? `${current.label}收款码加载失败，稍后再试` : `作者还没把${current.label}收款码放进来`}
+                        {hasUrl ? t("donate.qrcodeLoadFailed", channelLabel) : t("donate.qrcodeNotReady", channelLabel)}
                       </p>
                     </div>
                   )}

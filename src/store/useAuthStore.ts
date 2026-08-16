@@ -1,10 +1,23 @@
 import { create } from "zustand";
 import type { Session, User, RealtimeChannel } from "@supabase/supabase-js";
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/lib/supabase";
 import { ensureProfile } from "@/lib/sync";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useRecordStore } from "@/store/useRecordStore";
 import { useUIStore } from "@/store/useUIStore";
+
+/**
+ * 邮件验证回跳地址：
+ * - 原生（Android）：用 app scheme 深链拉回 App（com.selfdefense.app://auth/callback）
+ * - Web/PWA：不传，让 Supabase 用后台配置的 Site URL（即本站），由现有 hash 流程处理
+ *   若这里硬编码 app scheme，桌面浏览器点邮件链接会被重定向到无法识别的 scheme 而失效。
+ */
+function getAuthRedirectTo(): string | undefined {
+  return Capacitor.isNativePlatform()
+    ? "com.selfdefense.app://auth/callback"
+    : undefined;
+}
 
 interface AuthState {
   ready: boolean; // 初始化完成
@@ -81,7 +94,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (email, password) => {
     set({ loading: true, error: null, pendingEmailVerification: null });
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: getAuthRedirectTo()
+          ? { emailRedirectTo: getAuthRedirectTo() }
+          : {},
+      });
       if (error) {
         set({ error: error.message, loading: false });
         return false;
@@ -180,6 +199,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: em,
+        options: getAuthRedirectTo()
+          ? { emailRedirectTo: getAuthRedirectTo() }
+          : {},
       });
       if (error) throw error;
       set({ loading: false });
@@ -231,6 +253,74 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 }));
+
+/**
+ * 处理原生深链回跳（Android app scheme）：
+ *   com.selfdefense.app://auth/callback#access_token=...&refresh_token=...&type=signup
+ * 或（PKCE 流程）带 ?code=... 的回跳。
+ * 由 MainActivity 通过 WebView 注入 window.__ZIWEIBA_DEEPLINK__ / 'ziwe...' 事件触发。
+ */
+let deepLinkHandled = false;
+function handleDeepLink(url: string) {
+  if (deepLinkHandled || !url) return;
+  deepLinkHandled = true;
+
+  let code: string | null = null;
+  let accessToken: string | null = null;
+  let refreshToken: string | null = null;
+  let type: string | null = null;
+  try {
+    const u = new URL(url);
+    code = u.searchParams.get("code");
+    const hash = new URLSearchParams(u.hash.replace(/^#/, ""));
+    accessToken = hash.get("access_token");
+    refreshToken = hash.get("refresh_token");
+    type = hash.get("type") || u.searchParams.get("type");
+  } catch {
+    return;
+  }
+  if (!code && (!accessToken || !refreshToken)) return;
+
+  useUIStore.getState().setAuthCallback({
+    stage: "processing",
+    message: "正在验证邮箱，请稍候…",
+  });
+
+  const finish = (session: Session | null, errMsg?: string) => {
+    if (!session) {
+      useUIStore.getState().setAuthCallback({
+        stage: "error",
+        message: errMsg || "验证失败，链接可能已过期，请重新发送验证邮件",
+      });
+      return;
+    }
+    // session 已由 setSession/exchangeCodeForSession 触发 onAuthStateChange 写入 store
+    useUIStore.getState().setAuthCallback({
+      stage: type === "recovery" ? "recovery" : "verified",
+      message: session.user?.email
+        ? `${session.user.email} 邮箱已验证成功，现在可以登录啦`
+        : "邮箱已验证成功，现在可以登录啦",
+    });
+  };
+
+  if (code) {
+    supabase.auth
+      .exchangeCodeForSession(code)
+      .then(({ data, error }) => {
+        if (error || !data.session) finish(null, error?.message);
+        else finish(data.session);
+      })
+      .catch((e: any) => finish(null, e?.message));
+  } else {
+    supabase.auth
+      .setSession({ access_token: accessToken!, refresh_token: refreshToken! })
+      .then(({ data, error }) => {
+        if (error || !data.session) finish(null, error?.message);
+        else finish(data.session);
+      })
+      .catch((e: any) => finish(null, e?.message));
+  }
+}
 
 /**
  * 初始化认证监听：监听 session 变化，更新 store。
@@ -347,4 +437,16 @@ export function initAuth() {
       unsubscribeProfile();
     }
   });
+
+  // 原生深链（Android app scheme）回跳：MainActivity 把 URL 注入到 WebView，
+  // 这里读取注入的全局 / 监听自定义事件，交 handleDeepLink 建立会话。
+  try {
+    const queued = (window as any).__ZIWEIBA_DEEPLINK__;
+    if (queued) handleDeepLink(queued as string);
+    window.addEventListener("ziweiba-deeplink", (e: any) =>
+      handleDeepLink(e.detail as string),
+    );
+  } catch {
+    // 忽略：非浏览器/WebView 环境
+  }
 }

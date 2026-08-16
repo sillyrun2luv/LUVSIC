@@ -18,6 +18,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useUIStore } from "@/store/useUIStore";
 import { toast } from "@/store/useToastStore";
 import { cn } from "@/lib/utils";
+import { t } from "@/store/useI18nStore";
 
 type Mode = "login" | "signup";
 
@@ -73,7 +74,7 @@ export default function AuthSheet() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      toast("请填写邮箱和密码", "warn");
+      toast(t("auth.fillRequired"), "warn");
       return;
     }
     const ok = mode === "login"
@@ -86,14 +87,14 @@ export default function AuthSheet() {
       return;
     }
     if (ok && currentUser) {
-      toast(mode === "login" ? "登录成功" : "注册成功", "success");
+      toast(mode === "login" ? t("auth.loginSuccess") : t("auth.registerSuccess"), "success");
       close();
     }
   };
 
   const handleSignOut = async () => {
     await signOut();
-    toast("已退出登录", "success");
+    toast(t("auth.logoutSuccess"), "success");
     close();
   };
 
@@ -102,7 +103,7 @@ export default function AuthSheet() {
     await resendConfirm();
     if (!useAuthStore.getState().error) {
       setResendCountdown(60);
-      toast("已重新发送，请注意查收", "success");
+      toast(t("settings.auth.resendSuccess", "已重新发送，请注意查收"), "success");
     } else {
       // rate limit 错误也启动倒计时（Supabase 默认 60 秒冷却）
       const err = useAuthStore.getState().error || "";
@@ -119,7 +120,7 @@ export default function AuthSheet() {
   // ========================================================
   if (pendingEmailVerification) {
     return createPortal(
-      <div className="fixed inset-0 z-[110] flex items-end justify-center">
+      <div className="fixed inset-0 z-[110] pb-[72px] flex items-end justify-center">
         {/* 点击遮罩也不关闭 */}
         <div className="absolute inset-0 bg-ink-950/75 backdrop-blur-sm" />
 
@@ -127,7 +128,7 @@ export default function AuthSheet() {
           <div className="mb-4 flex items-center justify-end">
             <span className="inline-flex items-center gap-1 rounded-full bg-amber/15 px-2.5 py-1 text-[11px] font-medium text-amber-glow ring-1 ring-amber/30">
               <ShieldCheck size={12} />
-              安全验证
+              {t("settings.auth.securityVerify")}
             </span>
           </div>
 
@@ -135,19 +136,19 @@ export default function AuthSheet() {
             <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full bg-sky-500/15 text-sky-300">
               <Inbox size={26} />
             </div>
-            <p className="font-display text-xl text-cream">请到邮箱确认</p>
+            <p className="font-display text-xl text-cream">{t("settings.auth.pleaseConfirmEmail")}</p>
             <p className="mt-1 break-all text-sm text-muted">
-              验证链接已发送至 <span className="text-cream">{pendingEmailVerification}</span>
+              {t("settings.auth.verifyLinkSent", pendingEmailVerification)}
             </p>
           </div>
 
           <div className="mt-5 space-y-3 rounded-xl border border-sky-500/20 bg-sky-500/5 p-4 text-xs leading-relaxed text-muted">
-            <p className="text-sky-200">下一步：</p>
+            <p className="text-sky-200">{t("settings.auth.nextStep", "下一步：")}</p>
             <ol className="list-decimal space-y-1.5 pl-5 text-muted/90">
-              <li>登录刚才填写的邮箱（如未收到，先看垃圾邮件）</li>
-              <li>打开主题为「Confirm your signup」的邮件</li>
-              <li>点击邮件中「Confirm your email」按钮</li>
-              <li>点下方「我已验证，重新登录」回到这里</li>
+              <li>{t("settings.auth.step1", "登录刚才填写的邮箱（如未收到，先看垃圾邮件）")}</li>
+              <li>{t("settings.auth.step2", "打开主题为「Confirm your signup」的邮件")}</li>
+              <li>{t("settings.auth.step3", "点击邮件中「Confirm your email」按钮")}</li>
+              <li>{t("settings.auth.step4", "点下方「我已验证，重新登录」回到这里")}</li>
             </ol>
           </div>
 
@@ -168,7 +169,7 @@ export default function AuthSheet() {
               className="flex w-full items-center justify-center gap-2 rounded-full bg-amber px-4 py-3 font-medium text-ink-950 shadow-glow transition-colors hover:bg-amber-glow disabled:opacity-60"
             >
               <CheckCircle2 size={17} />
-              我已验证，重新登录
+              {t("settings.auth.verifiedRelogin")}
             </button>
 
             <button
@@ -184,8 +185,8 @@ export default function AuthSheet() {
                 <RefreshCw size={15} />
               )}
               {resendCountdown > 0
-                ? `${resendCountdown}s 后可重新发送`
-                : "没收到？重新发送"}
+                ? t("settings.auth.resendCooldown", resendCountdown)
+                : t("settings.auth.resendEmail")}
             </button>
 
             <button
@@ -198,7 +199,7 @@ export default function AuthSheet() {
               className="flex w-full items-center justify-center gap-1.5 pt-1 text-xs text-muted transition-colors hover:text-mist"
             >
               <ArrowLeft size={13} />
-              换一个邮箱注册
+              {t("settings.auth.changeEmail")}
             </button>
           </div>
         </div>
@@ -211,14 +212,14 @@ export default function AuthSheet() {
   //  B. 正常登录/注册表单
   // ========================================================
   return createPortal(
-    <div className="fixed inset-0 z-[110] flex items-end justify-center">
+    <div className="fixed inset-0 z-[110] pb-[72px] flex items-end justify-center">
       <div className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm" onClick={close} />
 
       <div className="relative w-full max-w-md animate-slideUp rounded-t-3xl border-t border-line/80 bg-ink-900/95 p-6 backdrop-blur-md">
         <button
           onClick={close}
           className="absolute right-4 top-4 text-muted hover:text-mist"
-          aria-label="关闭"
+          aria-label={t("auth.close")}
         >
           <X size={18} />
         </button>
@@ -230,14 +231,14 @@ export default function AuthSheet() {
               <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
                 <CheckCircle2 size={22} />
               </div>
-              <p className="font-display text-lg text-cream">已登录云端</p>
+              <p className="font-display text-lg text-cream">{t("settings.auth.loggedIn")}</p>
               <p className="mt-1 truncate text-xs text-muted">{user.email}</p>
             </div>
 
             <div className="rounded-xl border border-line bg-ink-900/60 p-4 text-xs leading-relaxed text-muted">
-              <p>· 在「设置 → 云端 · 同步」中上传或下载数据</p>
-              <p>· 密码锁仅保存在本机，不会上传</p>
-              <p>· 多设备登录可实现数据互通</p>
+              <p>· {t("settings.auth.syncHint")}</p>
+              <p>· {t("settings.auth.passwordLockLocalOnly")}</p>
+              <p>· {t("settings.auth.multiDeviceSync")}</p>
             </div>
 
             <button
@@ -245,7 +246,7 @@ export default function AuthSheet() {
               className="flex w-full items-center justify-center gap-2 rounded-full border border-red-500/40 px-4 py-2.5 text-sm text-red-200 transition-colors hover:bg-red-500/10"
             >
               <LogOut size={15} />
-              退出登录
+              {t("settings.auth.logout")}
             </button>
           </div>
         ) : (
@@ -256,9 +257,9 @@ export default function AuthSheet() {
                 <Cloud size={22} />
               </div>
               <p className="font-display text-lg text-cream">
-                {mode === "login" ? "登录云端账户" : "注册云端账户"}
+                {mode === "login" ? t("auth.loginTitle") : t("auth.registerTitle")}
               </p>
-              <p className="mt-1 text-xs text-muted">同步记录与设置，多设备互通</p>
+              <p className="mt-1 text-xs text-muted">{t("auth.syncDesc")}</p>
             </div>
 
             {/* Tab 切换 */}
@@ -272,7 +273,7 @@ export default function AuthSheet() {
                     mode === m ? "bg-amber/15 text-amber-glow" : "text-muted hover:text-mist",
                   )}
                 >
-                  {m === "login" ? "登录" : "注册"}
+                  {m === "login" ? t("auth.login") : t("auth.register")}
                 </button>
               ))}
             </div>
@@ -284,7 +285,7 @@ export default function AuthSheet() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="邮箱"
+                  placeholder={t("auth.email")}
                   autoComplete="email"
                   className="w-full rounded-lg border border-line bg-ink-800 py-2.5 pl-9 pr-3 text-sm text-cream outline-none focus:border-amber/50"
                 />
@@ -295,7 +296,7 @@ export default function AuthSheet() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="密码（至少 6 位）"
+                  placeholder={t("auth.password")}
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
                   className="w-full rounded-lg border border-line bg-ink-800 py-2.5 pl-9 pr-3 text-sm text-cream outline-none focus:border-amber/50"
                 />
@@ -312,14 +313,14 @@ export default function AuthSheet() {
                 disabled={loading}
                 className="flex w-full items-center justify-center gap-2 rounded-full bg-amber px-4 py-2.5 text-sm text-ink-950 transition-colors hover:bg-amber-glow disabled:opacity-60"
               >
-                {loading ? "处理中…" : mode === "login" ? "登录" : "注册"}
+                {loading ? t("common.processing") : mode === "login" ? t("auth.login") : t("auth.register")}
               </button>
             </form>
 
             <p className="text-center text-[11px] leading-relaxed text-muted/70">
               {mode === "signup"
-                ? "注册后必须到邮箱点击确认链接，否则无法登录"
-                : "登录后数据会自动同步，密码锁不会上传"}
+                ? t("auth.signupNote", "注册后必须到邮箱点击确认链接，否则无法登录")
+                : t("auth.loginNote", "登录后数据会自动同步，密码锁不会上传")}
             </p>
           </div>
         )}

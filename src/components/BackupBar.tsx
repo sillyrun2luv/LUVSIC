@@ -4,6 +4,7 @@ import { useRecordStore } from "@/store/useRecordStore";
 import { toast } from "@/store/useToastStore";
 import { saveFile } from "@/lib/saveFile";
 import type { RecordEntry } from "@/types";
+import { t } from "@/store/useI18nStore";
 
 interface BackupBarProps {
   onClearAll: () => void;
@@ -16,7 +17,7 @@ export default function BackupBar({ onClearAll }: BackupBarProps) {
 
   const handleExport = async () => {
     if (records.length === 0) {
-      toast("暂无记录可导出", "warn");
+      toast(t("settings.dataExport.noRecordsToExport"), "warn");
       return;
     }
     const date = new Date().toISOString().slice(0, 10);
@@ -26,10 +27,10 @@ export default function BackupBar({ onClearAll }: BackupBarProps) {
         content: JSON.stringify(records, null, 2),
         mimeType: "application/json",
       });
-      toast("已导出备份", "success");
+      toast(t("settings.dataExport.exportSuccess"), "success");
     } catch (err) {
       console.error(err);
-      toast("导出失败", "warn");
+      toast(t("settings.dataExport.exportFailed"), "warn");
     }
   };
 
@@ -40,9 +41,9 @@ export default function BackupBar({ onClearAll }: BackupBarProps) {
         const parsed = JSON.parse(String(reader.result));
         if (!Array.isArray(parsed)) throw new Error("格式不对");
         importData(parsed as RecordEntry[]);
-        toast(`已导入 ${parsed.length} 条记录`, "success");
+        toast(t("settings.dataExport.importSuccess", parsed.length), "success");
       } catch {
-        toast("文件格式不正确", "warn");
+        toast(t("settings.dataExport.invalidFileFormat"), "warn");
       }
     };
     reader.readAsText(file);
@@ -55,21 +56,21 @@ export default function BackupBar({ onClearAll }: BackupBarProps) {
         className="flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow"
       >
         <Download size={15} />
-        导出备份
+        {t("settings.dataExport.exportBackup")}
       </button>
       <button
         onClick={() => fileRef.current?.click()}
         className="flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow"
       >
         <Upload size={15} />
-        导入
+        {t("settings.dataExport.import")}
       </button>
       <button
         onClick={onClearAll}
         className="flex items-center gap-2 rounded-full border border-red-500/30 px-4 py-2 text-sm text-red-300/80 transition-colors hover:border-red-400/60 hover:text-red-200"
       >
         <Trash2 size={15} />
-        清空
+        {t("settings.dataExport.clear")}
       </button>
       <input
         ref={fileRef}

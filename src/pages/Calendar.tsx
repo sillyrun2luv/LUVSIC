@@ -4,6 +4,7 @@ import { useRecordStore } from "@/store/useRecordStore";
 import { useUIStore } from "@/store/useUIStore";
 import { isSameDay, weekdayShort, formatDateCN, formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { t } from "@/store/useI18nStore";
 
 type CalendarView = "week" | "month" | "year";
 
@@ -96,7 +97,7 @@ export default function Calendar() {
       }
       months.push({
         ts: first.getTime(),
-        label: `${m + 1}月`,
+        label: t("date.formatShortCN", m + 1, "").replace("日", ""),
         days,
       });
     }
@@ -153,27 +154,27 @@ export default function Calendar() {
 
   /** 标题（右上角月份/年份/周范围） */
   const headerTitle = useMemo(() => {
-    if (viewMode === "year") return `${anchorDate.getFullYear()} 年`;
-    if (viewMode === "month") return `${anchorDate.getFullYear()} 年 ${anchorDate.getMonth() + 1} 月`;
+    if (viewMode === "year") return t("calendar.yearFormat", anchorDate.getFullYear());
+    if (viewMode === "month") return t("calendar.monthFormat", anchorDate.getFullYear(), anchorDate.getMonth() + 1);
     const start = weekCells[0];
     const end = weekCells[6];
     const startD = new Date(start.ts);
     const endD = new Date(end.ts);
     if (startD.getMonth() === endD.getMonth()) {
-      return `${startD.getFullYear()} 年 ${startD.getMonth() + 1} 月 ${startD.getDate()}–${endD.getDate()} 日`;
+      return t("calendar.weekRangeFormat", startD.getFullYear(), startD.getMonth() + 1, startD.getDate(), endD.getDate());
     }
-    return `${startD.getMonth() + 1}月${startD.getDate()}日 – ${endD.getMonth() + 1}月${endD.getDate()}日`;
+    return t("calendar.monthRangeFormat", startD.getMonth() + 1, startD.getDate(), endD.getMonth() + 1, endD.getDate());
   }, [viewMode, anchorDate, weekCells]);
 
   return (
     <div className="animate-fadeIn space-y-6">
       <header>
-        <p className="label-eyebrow mb-2">日历</p>
+        <p className="label-eyebrow mb-2">{t("calendar.title")}</p>
         <h1 className="font-display text-4xl font-medium text-cream">
           岁月<em className="not-italic text-cyan-300">刻度</em>
         </h1>
         <p className="mt-2 text-sm text-muted">
-          共 {records.length} 次 · 有记录 {dayMap.size} 天
+          {t("calendar.summary", records.length, dayMap.size)}
         </p>
       </header>
 
@@ -194,7 +195,7 @@ export default function Calendar() {
                       : "text-muted hover:text-mist",
                   )}
                 >
-                  {m === "week" ? "周" : m === "month" ? "月" : "年"}
+                  {m === "week" ? t("calendar.week") : m === "month" ? t("calendar.month") : t("calendar.year")}
                 </button>
               );
             })}
@@ -204,19 +205,19 @@ export default function Calendar() {
               onClick={() => gotoToday()}
               className="rounded-full border border-line px-2.5 py-1.5 text-xs text-muted hover:border-cyan/40 hover:text-cyan-300"
             >
-              今天
+              {t("calendar.today")}
             </button>
             <button
               onClick={() => shift(-1)}
               className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-ink-800 hover:text-mist"
-              aria-label="上一页"
+              aria-label={t("common.back")}
             >
               <ChevronLeft size={18} />
             </button>
             <button
               onClick={() => shift(1)}
               className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-ink-800 hover:text-mist"
-              aria-label="下一页"
+              aria-label={t("common.next")}
             >
               <ChevronRight size={18} />
             </button>
@@ -252,7 +253,7 @@ export default function Calendar() {
                 >
                   <span className="text-base font-medium leading-none">{c.dayNum}</span>
                   {info && info.count > 0 && (
-                    <span className="mt-0.5 text-[9px] leading-none opacity-80">{info.count}次</span>
+                    <span className="mt-0.5 text-[9px] leading-none opacity-80">{t("calendar.timesUnit", info.count)}</span>
                   )}
                 </button>
               );
@@ -271,7 +272,7 @@ export default function Calendar() {
               const isToday = c.ts === todayTs;
               const isSelected = c.ts === selectedDay;
               const lv = intensity(info?.count ?? 0);
-              const hrs = c.monthNum + "月";
+              const hrs = t("date.formatShortCN", c.monthNum, "").replace("日", "");
               return (
                 <button
                   key={c.ts}
@@ -284,15 +285,15 @@ export default function Calendar() {
                   )}
                 >
                   <div className="w-full text-center">
-                    <div className="text-[10px] text-muted/80">{c.monthNum}月</div>
+                    <div className="text-[10px] text-muted/80">{t("date.formatShortCN", c.monthNum, "").replace("日", "")}</div>
                     <div className="text-xl font-medium leading-tight">{c.dayNum}</div>
                     <div className="text-[10px] text-muted/80">{weekdayShort(new Date(c.ts))}</div>
                   </div>
                   {info && info.count > 0 && (
                     <div className="w-full space-y-1 text-center">
-                      <div className="text-xs font-semibold leading-none">{info.count}次</div>
+                      <div className="text-xs font-semibold leading-none">{t("calendar.timesUnit", info.count)}</div>
                       <div className="text-[10px] opacity-75 leading-none">
-                        {info.totalMinutes >= 1 ? `${Math.round(info.totalMinutes)}分` : ""}
+                        {info.totalMinutes >= 1 ? `${Math.round(info.totalMinutes)}${t("calendar.minuteUnit")}` : ""}
                       </div>
                     </div>
                   )}
@@ -322,7 +323,7 @@ export default function Calendar() {
                     <button
                       key={d.ts}
                       onClick={() => openDay(d.ts)}
-                      title={`${d.dayNum}日 · ${info ? info.count + "次" : "无记录"}`}
+                      title={info ? t("calendar.dayWithRecords", d.dayNum, info.count) : t("calendar.dayWithoutRecords", d.dayNum)}
                       className={cn(
                         "aspect-square rounded-[4px] text-[9px] transition-all",
                         lv === 0 && "bg-ink-800/50 text-transparent",
@@ -364,7 +365,7 @@ export default function Calendar() {
 /** ===== 子组件 ===== */
 
 function WeekHeader() {
-  const labels = ["一", "二", "三", "四", "五", "六", "日"];
+  const labels = [t("calendar.weekday1"), t("calendar.weekday2"), t("calendar.weekday3"), t("calendar.weekday4"), t("calendar.weekday5"), t("calendar.weekday6"), t("calendar.weekday7")];
   return (
     <div className="grid grid-cols-7 gap-1.5">
       {labels.map((l, i) => (
@@ -384,15 +385,15 @@ function WeekHeader() {
 
 function Legend() {
   const items = [
-    { label: "无", cls: "bg-ink-800/50" },
-    { label: "1", cls: "bg-amber/25" },
-    { label: "2", cls: "bg-amber/45" },
-    { label: "3", cls: "bg-amber/65" },
-    { label: "4+", cls: "bg-amber shadow-glow" },
+    { label: t("calendar.heat0"), cls: "bg-ink-800/50" },
+    { label: t("calendar.heat1"), cls: "bg-amber/25" },
+    { label: t("calendar.heat2"), cls: "bg-amber/45" },
+    { label: t("calendar.heat3"), cls: "bg-amber/65" },
+    { label: t("calendar.heat4plus"), cls: "bg-amber shadow-glow" },
   ];
   return (
     <div className="flex items-center gap-2 text-[10px] text-muted">
-      <span>热度</span>
+      <span>{t("calendar.heat")}</span>
       {items.map((it) => (
         <div key={it.label} className="flex items-center gap-1">
           <span className={cn("h-3 w-3 rounded-[3px]", it.cls)} />
@@ -419,11 +420,11 @@ function MonthSummary({
       total += info.totalMinutes;
     }
   }
-  if (count === 0) return <div className="text-[10px] text-muted">0次</div>;
+  if (count === 0) return <div className="text-[10px] text-muted">{t("calendar.timesUnit", 0)}</div>;
   return (
     <div className="text-right text-[10px]">
-      <div className="text-amber-glow">{count}次</div>
-      <div className="text-muted/80">{Math.round(total)}分</div>
+      <div className="text-amber-glow">{t("calendar.timesUnit", count)}</div>
+      <div className="text-muted/80">{Math.round(total)}{t("calendar.minuteUnit")}</div>
     </div>
   );
 }
@@ -443,7 +444,7 @@ function DayDetailDrawer({
 }) {
   const date = new Date(dayTs);
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center">
+    <div className="fixed inset-0 z-[100] pb-[72px] flex items-end justify-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
         onClick={onClose}
@@ -455,20 +456,20 @@ function DayDetailDrawer({
             <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line" />
             <header className="mb-4 flex items-end justify-between">
               <div>
-                <p className="label-eyebrow mb-1">{weekdayShort(date)} · {isSameDay(dayTs, Date.now()) ? "今天" : ""}</p>
+                <p className="label-eyebrow mb-1">{weekdayShort(date)} · {isSameDay(dayTs, Date.now()) ? t("calendar.today") : ""}</p>
                 <h3 className="font-display text-2xl text-cream">{formatDateCN(date)}</h3>
               </div>
               <button
                 onClick={onClose}
                 className="rounded-full border border-line px-3 py-1.5 text-xs text-muted hover:border-amber/40 hover:text-mist"
               >
-                关闭
+                {t("calendar.close")}
               </button>
             </header>
             <div className="mb-4 grid grid-cols-3 gap-2">
-              <Stat label="次数" value={info.count} unit="次" />
-              <Stat label="总时长" value={info.totalMinutes >= 1 ? `${Math.round(info.totalMinutes)}` : "0"} unit={info.totalMinutes >= 1 ? "分" : ""} />
-              <Stat label="平均" value={info.count ? `${Math.round(info.totalMinutes / info.count)}` : "0"} unit={info.count ? "分" : ""} />
+              <Stat label={t("calendar.count")} value={info.count} unit={t("calendar.countUnit")} />
+              <Stat label={t("calendar.totalDuration")} value={info.totalMinutes >= 1 ? `${Math.round(info.totalMinutes)}` : "0"} unit={info.totalMinutes >= 1 ? t("calendar.minuteUnit") : ""} />
+              <Stat label={t("calendar.average")} value={info.count ? `${Math.round(info.totalMinutes / info.count)}` : "0"} unit={info.count ? t("calendar.minuteUnit") : ""} />
             </div>
           </div>
         </div>
@@ -484,7 +485,7 @@ function DayDetailDrawer({
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-line text-muted">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
                 </div>
-                <p className="text-sm text-muted">这天还没有记录，是平静的一天。</p>
+                <p className="text-sm text-muted">{t("calendar.noRecordDay")}</p>
               </div>
             ) : (
               <div className="space-y-2 pb-2">
@@ -495,14 +496,14 @@ function DayDetailDrawer({
                     className="group flex w-full items-center gap-3 rounded-2xl border border-line/60 bg-ink-800/60 p-3 text-left transition-all hover:border-amber/40 hover:bg-ink-800"
                   >
                     <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-amber/10 text-amber-glow ring-1 ring-amber/20">
-                      <span className="text-[10px] text-muted">第</span>
+                      <span className="text-[10px] text-muted">{t("common.ordinal")}</span>
                       <span className="text-sm font-semibold leading-none">{i + 1}</span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2">
                         <span className="font-display text-cream">{formatTime(r.timestamp)}</span>
                         <span className="text-xs text-muted">
-                          {r.duration >= 1 ? `${Math.round(r.duration * 10) / 10} 分钟` : ""}
+                          {r.duration >= 1 ? `${Math.round(r.duration * 10) / 10} ${t("record.minutes")}` : ""}
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-1">

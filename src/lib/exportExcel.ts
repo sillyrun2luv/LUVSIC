@@ -1,6 +1,7 @@
 import type { RecordEntry } from "@/types";
 import { formatDateTime } from "./date";
 import { saveFile } from "./saveFile";
+import { t } from "@/store/useI18nStore";
 
 /**
  * 导出记录为可被 Excel / WPS 直接打开的 .xls（HTML Table）文件。
@@ -11,12 +12,12 @@ export async function exportRecordsXls(records: RecordEntry[]): Promise<void> {
   // 表头
   rows.push(
     [
-      "日期时间",
-      "时长(分钟)",
-      "刺激形式",
-      "辅助道具",
-      "备注",
-      "记录创建时间",
+      t('settings.dataExport.excelHeaders.dateTime'),
+      t('settings.dataExport.excelHeaders.durationMinutes'),
+      t('settings.dataExport.excelHeaders.forms'),
+      t('settings.dataExport.excelHeaders.tools'),
+      t('settings.dataExport.excelHeaders.note'),
+      t('settings.dataExport.excelHeaders.createdAt'),
     ].map(htmlCellEscape).join("</td><td>"),
   );
 
@@ -63,7 +64,7 @@ tr:nth-child(1) td { background:#F5E6CE; font-weight:bold; }
   const content = "\uFEFF" + html;
   const date = new Date().toISOString().slice(0, 10);
   await saveFile({
-    filename: `自卫吧-记录-${date}.xls`,
+    filename: `${t('app.name')}-${t('record.title')}-${date}.xls`,
     content,
     mimeType: "application/vnd.ms-excel;charset=utf-8",
   });

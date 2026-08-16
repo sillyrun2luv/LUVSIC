@@ -6,14 +6,15 @@ import HistoryItem from "@/components/HistoryItem";
 import SectionTitle from "@/components/SectionTitle";
 import { formatDuration } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { t } from "@/store/useI18nStore";
 
 /** 时长图例 */
 const TIERS = [
-  { label: "片刻", desc: "<3分", bar: "bg-amber/30" },
-  { label: "短暂", desc: "3-10", bar: "bg-amber/50" },
-  { label: "适中", desc: "10-20", bar: "bg-amber/70" },
-  { label: "绵长", desc: "20-40", bar: "bg-amber-deep" },
-  { label: "沉溺", desc: ">40", bar: "bg-amber-deep shadow-glow" },
+  { label: t("history.moment"), desc: t("history.d1"), bar: "bg-amber/30" },
+  { label: t("history.d1Label"), desc: t("history.d2"), bar: "bg-amber/50" },
+  { label: t("history.d2Label"), desc: t("history.d3"), bar: "bg-amber/70" },
+  { label: t("history.d3Label"), desc: t("history.d4"), bar: "bg-amber-deep" },
+  { label: t("history.d4Label"), desc: t("history.d5"), bar: "bg-amber-deep shadow-glow" },
 ];
 
 export default function History() {
@@ -48,37 +49,36 @@ export default function History() {
   return (
     <div className="animate-fadeIn space-y-8">
       <header>
-        <p className="label-eyebrow mb-2">历史</p>
+        <p className="label-eyebrow mb-2">{t("history.title")}</p>
         <h1 className="font-display text-4xl font-medium text-cream">
           全部<em className="not-italic text-amber-glow">痕迹</em>
         </h1>
         <p className="mt-2 text-sm text-muted">
-          共 {records.length} 次 · 累计 {formatDuration(totalMinutes)} · 平均{" "}
-          {formatDuration(avgMinutes)}
+          {t("history.summary", records.length, formatDuration(totalMinutes), formatDuration(avgMinutes))}
         </p>
       </header>
 
       {/* 时长图例 */}
       <section className="surface flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
-        <span className="label-eyebrow w-full">时长色谱 · 越久越深</span>
-        {TIERS.map((t) => (
-          <div key={t.label} className="flex items-center gap-1.5">
-            <span className={cn("h-3 w-3 rounded-full", t.bar)} />
-            <span className="text-xs text-mist">{t.label}</span>
-            <span className="text-[10px] text-muted">{t.desc}</span>
+        <span className="label-eyebrow w-full">{t("history.durationLegend")}</span>
+        {TIERS.map((tier) => (
+          <div key={tier.label} className="flex items-center gap-1.5">
+            <span className={cn("h-3 w-3 rounded-full", tier.bar)} />
+            <span className="text-xs text-mist">{tier.label}</span>
+            <span className="text-[10px] text-muted">{tier.desc}</span>
           </div>
         ))}
       </section>
 
       {/* 搜索 */}
       <section>
-        <SectionTitle eyebrow="记录列表" title={`共 ${filtered.length} 条`} />
+        <SectionTitle eyebrow={t("history.recordList")} title={t("history.totalCount", filtered.length)} />
         <div className="relative mb-4">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索形式、道具或备注"
+            placeholder={t("history.searchPlaceholder")}
             className="w-full rounded-full border border-line bg-ink-900 py-2.5 pl-9 pr-4 text-sm text-cream outline-none transition-colors placeholder:text-muted/60 focus:border-amber/40"
           />
         </div>
@@ -86,7 +86,7 @@ export default function History() {
         {records.length === 0 ? (
           <div className="surface flex flex-col items-center gap-3 p-10 text-center">
             <HistoryIcon size={22} className="text-muted" />
-            <p className="text-sm text-muted">还没有记录，历史会在这里沉淀。</p>
+            <p className="text-sm text-muted">{t("history.emptyTip")}</p>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -94,7 +94,7 @@ export default function History() {
               <HistoryItem key={r.id} record={r} onOpen={(rec) => openDetail(rec.id)} />
             ))}
             {filtered.length === 0 && (
-              <p className="py-6 text-center text-sm text-muted">没有匹配的记录。</p>
+              <p className="py-6 text-center text-sm text-muted">{t("history.noMatch")}</p>
             )}
           </div>
         )}

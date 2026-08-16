@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
+import { t } from "@/store/useI18nStore";
 
 export default function PWAUpdatePrompt() {
   const [dismissed, setDismissed] = useState(false);
@@ -10,7 +11,6 @@ export default function PWAUpdatePrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(url) {
-      // 注册成功，每 20 分钟检查一次更新
       if (url) {
         console.log("SW registered:", url);
       }
@@ -34,8 +34,8 @@ export default function PWAUpdatePrompt() {
         <RefreshCw size={18} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm text-cream">有新版本了</p>
-        <p className="text-xs text-muted">点击更新以获取最新功能</p>
+        <p className="text-sm text-cream">{t('pwaUpdate.title')}</p>
+        <p className="text-xs text-muted">{t('pwaUpdate.desc')}</p>
       </div>
       <button
         onClick={handleDismiss}
@@ -47,7 +47,7 @@ export default function PWAUpdatePrompt() {
         onClick={handleUpdate}
         className="rounded-full bg-amber px-4 py-1.5 text-xs font-medium text-ink-950 transition-colors hover:bg-amber-glow"
       >
-        更新
+        {t('pwaUpdate.update')}
       </button>
     </div>
   );

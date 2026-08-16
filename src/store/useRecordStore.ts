@@ -25,6 +25,7 @@ const DEFAULT_SETTINGS: Settings = {
   },
   lock: { enabled: false },
   showFloatingTimer: true,
+  overlayTimer: true,
 };
 
 // 旧材料 → 形式 / 道具 的最佳映射
@@ -66,6 +67,8 @@ interface RecordState {
   setLock: (patch: Partial<Settings["lock"]>) => void;
 
   setShowFloatingTimer: (v: boolean) => void;
+
+  setShowOverlayTimer: (v: boolean) => void;
 
   addForm: (name: string) => void;
   removeForm: (name: string) => void;
@@ -152,6 +155,11 @@ export const useRecordStore = create<RecordState>()(
       setShowFloatingTimer: (v) =>
         set((state) => ({
           settings: { ...state.settings, showFloatingTimer: v },
+        })),
+
+      setShowOverlayTimer: (v) =>
+        set((state) => ({
+          settings: { ...state.settings, overlayTimer: v },
         })),
 
       addForm: (name) =>
@@ -251,6 +259,7 @@ export const useRecordStore = create<RecordState>()(
           tools: Array.isArray(s.tools) && s.tools.length > 0 ? s.tools : [...DEFAULT_TOOLS],
           presets: Array.isArray(s.presets) && s.presets.length > 0 ? s.presets : DEFAULT_PRESETS,
           showFloatingTimer: typeof s.showFloatingTimer === "boolean" ? s.showFloatingTimer : true,
+          overlayTimer: typeof s.overlayTimer === "boolean" ? s.overlayTimer : true,
           lock: {
             ...DEFAULT_SETTINGS.lock,
             ...(s.lock ?? {}),

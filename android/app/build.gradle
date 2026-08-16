@@ -7,8 +7,8 @@ android {
         applicationId "com.selfdefense.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.1.4"
+        versionCode 7
+        versionName "1.2.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +16,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // 固定签名：复用 Gradle 默认 debug.keystore，保证所有版本（debug/release）
+    // 都用同一把证书，安装时可覆盖升级、无需卸载重装。
+    signingConfigs {
+        fixed {
+            storeFile file("C:/Users/silly/.android/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.fixed
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.fixed
         }
     }
 }

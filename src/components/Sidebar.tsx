@@ -11,6 +11,7 @@ import type { ViewKey } from "@/types";
 import { cn } from "@/lib/utils";
 import Avatar, { buildTextAvatar, avatarKind } from "./Avatar";
 import { toast } from "@/store/useToastStore";
+import { t } from "@/store/useI18nStore";
 
 const NAV_ITEMS: {
   key: ViewKey;
@@ -22,21 +23,21 @@ const NAV_ITEMS: {
 }[] = [
   {
     key: "overview",
-    label: "概览",
+    label: "bottomNav.overview",
     icon: LayoutDashboard,
     activeCls: "bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30",
     idleCls: "text-sky-400/80 hover:bg-sky-500/10 hover:text-sky-300",
   },
   {
     key: "record",
-    label: "记录",
+    label: "bottomNav.record",
     icon: NotebookPen,
     activeCls: "bg-amber/15 text-amber-glow ring-1 ring-amber/30",
     idleCls: "text-amber-glow/80 hover:bg-amber/10 hover:text-amber-glow",
   },
   {
     key: "friends",
-    label: "好友",
+    label: "bottomNav.friends",
     icon: Users,
     activeCls: "bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/30",
     idleCls: "text-teal-400/80 hover:bg-teal-500/10 hover:text-teal-300",
@@ -44,7 +45,7 @@ const NAV_ITEMS: {
   },
   {
     key: "profile",
-    label: "我的",
+    label: "bottomNav.profile",
     icon: UserCircle,
     activeCls: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30",
     idleCls: "text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-300",
@@ -122,14 +123,14 @@ export default function Sidebar() {
             <button
               onClick={() => setShowAvatars((v) => !v)}
               className="shrink-0 rounded-full border border-amber/40 bg-amber/10 shadow-glow transition-transform hover:scale-105"
-              aria-label="更换头像"
+              aria-label={t("profile.changeAvatar")}
             >
               <Avatar value={avatar} size={64} emojiScale={0.5} ringClass="ring-0 border-0" />
             </button>
             <button
               onClick={closeSidebar}
               className="text-muted hover:text-mist"
-              aria-label="关闭"
+              aria-label={t("common.close")}
             >
               <X size={18} />
             </button>
@@ -151,7 +152,7 @@ export default function Sidebar() {
               <button
                 onClick={commitName}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-amber text-ink-950"
-                aria-label="确定"
+                aria-label={t("profile.confirm")}
               >
                 <Check size={15} />
               </button>
@@ -173,25 +174,25 @@ export default function Sidebar() {
           )}
 
           <p className="mt-1 text-xs text-muted">
-            {g.period}好，{streak > 0 ? `已连续记录 ${streak} 天` : "从一次开始"}
+            {g.period + t("sidebar.greetingSuffix", streak > 0 ? t("overview.streakDays", streak) : t("sidebar.freshStart"))}
           </p>
 
           {/* 头像选择 */}
           {showAvatars && (
             <div className="mt-3 rounded-xl border border-line bg-ink-850/80 p-2.5">
               <div className="mb-2 flex items-center justify-between px-1">
-                <div className="text-[11px] text-muted">选表情头像 · 共 {AVATAR_OPTIONS.length} 个</div>
+                <div className="text-[11px] text-muted">{t("profile.emojiAvatarCount", AVATAR_OPTIONS.length)}</div>
                 <button
                   onClick={() => {
-                    const t = buildTextAvatar(name || "我");
-                    setAvatar(t);
+                    const textAvatar = buildTextAvatar(name || t("common.me"));
+                    setAvatar(textAvatar);
                     setShowAvatars(false);
-                    toast("已切换为昵称首字渐变头像", "success");
+                    toast(t("toast.textAvatarSwitched"), "success");
                   }}
                   className="flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[11px] text-violet-200 ring-1 ring-violet-500/30 hover:bg-violet-500/25"
                 >
-                  <Avatar value={buildTextAvatar(name || "我")} size={14} ringClass="ring-0" emojiScale={0.85} />
-                  用昵称首字生成
+                  <Avatar value={buildTextAvatar(name || t("common.me"))} size={14} ringClass="ring-0" emojiScale={0.85} />
+                  {t("profile.generateFromInitial")}
                 </button>
               </div>
               <div className="grid grid-cols-9 gap-1.5">
@@ -212,7 +213,7 @@ export default function Sidebar() {
                 ))}
                 {avatarKind(avatar) === "text" && (
                   <div
-                    title="当前：首字母渐变"
+                    title={t("profile.currentTextAvatar")}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber/20 ring-1 ring-amber/60"
                   >
                     <Avatar value={avatar} size={24} ringClass="ring-0" />
@@ -245,7 +246,7 @@ export default function Sidebar() {
                     </span>
                   )}
                 </div>
-                {label}
+                {t(label)}
               </button>
             );
           })}
@@ -258,7 +259,7 @@ export default function Sidebar() {
             className="flex w-full items-center gap-3 rounded-xl bg-rose-500/10 px-4 py-3.5 text-base font-medium text-rose-300 transition-all hover:bg-rose-500/20 hover:text-rose-200 ring-1 ring-rose-500/25"
           >
             <Settings size={22} strokeWidth={1.8} />
-            设置
+            {t("settings.title")}
           </button>
         </div>
 
@@ -266,13 +267,13 @@ export default function Sidebar() {
         <div className="border-t border-line/60 p-4">
           <div className="label-eyebrow mb-2.5">外观 · 主题色</div>
           <div className="flex flex-wrap gap-2">
-            {THEMES.map((t) => {
-              const active = themeId === t.id;
+            {THEMES.map((theme) => {
+              const active = themeId === theme.id;
               return (
                 <button
-                  key={t.id}
-                  onClick={() => setTheme(t.id)}
-                  aria-label={t.name}
+                  key={theme.id}
+                  onClick={() => setTheme(theme.id)}
+                  aria-label={theme.name}
                   className={cn(
                     "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all",
                     active
@@ -282,9 +283,9 @@ export default function Sidebar() {
                 >
                   <span
                     className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: t.swatch }}
+                    style={{ backgroundColor: theme.swatch }}
                   />
-                  {t.name}
+                  {theme.name}
                 </button>
               );
             })}

@@ -56,7 +56,7 @@ export default function PKPopupSheet() {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-[100] pb-[72px] sm:pb-0 flex items-end justify-center sm:items-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/75 backdrop-blur-sm"
         onClick={close}

@@ -4,6 +4,7 @@ import { useRecordStore } from "@/store/useRecordStore";
 import { useUIStore } from "@/store/useUIStore";
 import { toast } from "@/store/useToastStore";
 import { cn, isValidPin, sha256Hex } from "@/lib/utils";
+import { t } from "@/store/useI18nStore";
 
 export default function LockGate() {
   const lock = useRecordStore((s) => s.settings.lock);
@@ -33,7 +34,7 @@ export default function LockGate() {
         setVerified(true);
         setPin("");
       } else {
-        toast("密码错误", "warn");
+        toast(t("settings.passwordLock.passwordWrong"), "warn");
         setShake(true);
         setTimeout(() => setShake(false), 420);
       }
@@ -66,8 +67,8 @@ export default function LockGate() {
         </div>
 
         <div className="text-center">
-          <h2 className="font-display text-3xl text-cream">请输入密码</h2>
-          <p className="mt-2 text-sm text-muted">密码锁已开启，解锁后可使用</p>
+          <h2 className="font-display text-3xl text-cream">{t("lockGate.enterPassword")}</h2>
+          <p className="mt-2 text-sm text-muted">{t("lockGate.lockedHint")}</p>
         </div>
 
         {/* 输入框显示 + 实际输入 */}
@@ -120,7 +121,7 @@ export default function LockGate() {
                 }}
                 className="cursor-pointer select-none hover:text-amber-glow"
               >
-                {show ? "显示密码" : "隐藏密码"}
+                {show ? t("lockGate.showPassword") : t("lockGate.hidePassword")}
               </span>
             </button>
           </div>
@@ -128,9 +129,9 @@ export default function LockGate() {
 
         {/* 数字键盘（移动端友好） */}
         <div className="grid w-full grid-cols-3 gap-2">
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"].map((k, i) => {
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", t("lockGate.backspace")].map((k, i) => {
             if (k === "") return <div key={i} />;
-            const isBack = k === "⌫";
+            const isBack = k === t("lockGate.backspace");
             return (
               <button
                 key={i}
@@ -166,7 +167,7 @@ export default function LockGate() {
           className="flex w-full items-center justify-center gap-2 rounded-full bg-amber px-5 py-3 text-base text-ink-950 transition-colors hover:bg-amber-glow disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Check size={16} />
-          {busy ? "验证中…" : "解锁"}
+          {busy ? t("lockGate.verifying") : t("lockGate.unlock")}
         </button>
       </div>
     </div>

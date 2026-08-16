@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import type { RecordEntry } from "@/types";
 import { formatDuration, relativeTime } from "@/lib/date";
+import { t } from "@/store/useI18nStore";
 
 interface RecordItemProps {
   record: RecordEntry;
@@ -49,7 +50,7 @@ export default function RecordItem({ record, onOpen }: RecordItemProps) {
           </div>
         )}
         {record.note && (
-          <p className="mt-1 truncate text-xs text-muted italic">“{record.note}”</p>
+          <p className="mt-1 truncate text-xs text-muted italic">{t('recordItem.noteFormat', record.note)}</p>
         )}
         <span className="sr-only">{formatDuration(record.duration)}</span>
       </div>

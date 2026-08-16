@@ -15,6 +15,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "@/store/useToastStore";
 import { useRecordStore } from "@/store/useRecordStore";
 import { cn } from "@/lib/utils";
+import { t } from "@/store/useI18nStore";
 
 interface Props {
   open: boolean;
@@ -67,10 +68,10 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
     try {
       const ok = await deleteAccount();
       if (ok) {
-        toast("账户已删除，数据不可恢复", "success");
+        toast(t("deleteAccount.deleteSuccess", "账户已删除，数据不可恢复"), "success");
         onClose();
       } else {
-        toast(authError || "删除失败", "warn");
+        toast(authError || t("deleteAccount.deleteFailed", "删除失败"), "warn");
       }
     } finally {
       setDeleting(false);
@@ -116,10 +117,10 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
               </div>
               <div className="min-w-0 flex-1 pt-1">
                 <h2 className="font-display text-xl font-medium text-red-200">
-                  删除账户
+                  {t("deleteAccount.title")}
                 </h2>
                 <p className="mt-1 text-xs leading-relaxed text-muted">
-                  操作完全不可逆，确定前请再三考虑
+                  {t("deleteAccount.irreversibleWarning")}
                 </p>
               </div>
             </div>
@@ -130,30 +131,29 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                 <div className="space-y-2 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
                   <div className="flex items-center gap-2 text-xs font-medium text-red-300">
                     <AlertTriangle size={14} />
-                    删除后以下内容会永久消失
+                    {t("deleteAccount.willDeleteTitle")}
                   </div>
                   <ul className="mt-2 space-y-2.5 text-[13px] text-red-100/80">
                     <li className="flex items-start gap-2.5">
                       <CloudOff size={14} className="mt-0.5 shrink-0 text-red-400" />
-                      <span>云端所有记录、设置、好友关系</span>
+                      <span>{t("deleteAccount.cloudData")}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <History size={14} className="mt-0.5 shrink-0 text-red-400" />
-                      <span>本地 {records.length} 条历史记录</span>
+                      <span>{t("deleteAccount.localRecords", records.length)}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <Settings size={14} className="mt-0.5 shrink-0 text-red-400" />
-                      <span>密码锁、提醒、预设、配色、密码锁密码</span>
+                      <span>{t("deleteAccount.localSettings")}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <Users size={14} className="mt-0.5 shrink-0 text-red-400" />
-                      <span>昵称、头像、好友、排行榜排名</span>
+                      <span>{t("deleteAccount.profileData")}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <ShieldAlert size={14} className="mt-0.5 shrink-0 text-red-400" />
                       <span>
-                        <span className="font-medium text-red-200">账号身份：</span>
-                        无法再用邮箱 <span className="font-mono text-red-200">{expectedEmail || "-"}</span> 登录
+                        {t("deleteAccount.accountIdentity", expectedEmail || "-")}
                       </span>
                     </li>
                   </ul>
@@ -162,9 +162,9 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                 <div className="rounded-2xl border border-line/60 bg-ink-800/50 p-4 text-[13px] leading-relaxed text-muted">
                   <div className="mb-1.5 flex items-center gap-2 text-mist">
                     <ShieldCheck size={14} className="text-amber-glow" />
-                    <span className="text-xs font-medium">想保留本地记录？</span>
+                    <span className="text-xs font-medium">{t("deleteAccount.backupHintTitle", "想保留本地记录？")}</span>
                   </div>
-                  可以先在 "设置 → 数据导出" 里导出 Excel 备份，再回来删除。
+                  {t("deleteAccount.backupHint")}
                 </div>
 
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -172,14 +172,14 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                     onClick={onClose}
                     className="flex-1 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:bg-ink-700 sm:flex-none sm:px-6"
                   >
-                    再想想
+                    {t("deleteAccount.thinkAgain")}
                   </button>
                   <button
                     onClick={() => setStage("typeEmail")}
                     className="flex flex-1 items-center justify-center gap-2 rounded-full border border-red-500/50 bg-red-500/15 px-4 py-2.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/25 sm:flex-none sm:px-6"
                   >
                     <Trash2 size={15} />
-                    我了解风险，继续
+                    {t("deleteAccount.understandRisk")}
                   </button>
                 </div>
               </div>
@@ -189,10 +189,10 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
             {stage === "typeEmail" && (
               <div className="mt-6 space-y-4 animate-fadeIn">
                 <label className="block text-[13px] leading-relaxed text-mist">
-                  为确保是你本人操作，请输入你的邮箱：
+                  {t("deleteAccount.confirmEmailHint")}
                 </label>
                 <div className="rounded-xl border border-line bg-ink-800 px-3 py-2">
-                  <div className="mb-1 text-[11px] text-muted">当前登录邮箱</div>
+                  <div className="mb-1 text-[11px] text-muted">{t("deleteAccount.currentLoginEmail")}</div>
                   <div className="font-mono text-sm text-amber-glow break-all">
                     {expectedEmail}
                   </div>
@@ -202,7 +202,7 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                     type="email"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="请输入上方邮箱"
+                    placeholder={t("deleteAccount.emailPlaceholder")}
                     spellCheck={false}
                     autoComplete="off"
                     className={cn(
@@ -216,12 +216,12 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                   />
                   {emailInput.length > 0 && !emailMatches && (
                     <p className="mt-1.5 pl-1 text-[11px] text-red-300/90">
-                      邮箱和当前登录邮箱不一致
+                      {t("deleteAccount.emailMismatch")}
                     </p>
                   )}
                   {emailMatches && (
                     <p className="mt-1.5 pl-1 text-[11px] text-emerald-300/90">
-                      匹配成功，下一步确认
+                      {t("deleteAccount.emailMatched")}
                     </p>
                   )}
                 </div>
@@ -234,14 +234,14 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                     }}
                     className="flex-1 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:bg-ink-700 sm:flex-none sm:px-6"
                   >
-                    返回
+                    {t("deleteAccount.backToPrev")}
                   </button>
                   <button
                     onClick={() => emailMatches && setStage("confirm")}
                     disabled={!emailMatches}
                     className="flex flex-1 items-center justify-center gap-2 rounded-full border border-red-500/50 bg-red-500/15 px-4 py-2.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:px-6"
                   >
-                    下一步确认
+                    {t("deleteAccount.nextConfirm")}
                   </button>
                 </div>
               </div>
@@ -254,13 +254,7 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                   <div className="flex items-start gap-3">
                     <AlertTriangle size={22} className="mt-0.5 shrink-0 text-red-400" />
                     <div className="text-[13px] leading-relaxed text-red-100/90">
-                      这是最后一步。点下"确认永久删除"后：
-                      <div className="mt-2 space-y-1 pl-1 text-red-200/90">
-                        · 你的云端身份、所有记录会立即从数据库中抹去
-                        <br />· 本地记录、设置、密码锁会被清空
-                        <br />·
-                        <span className="font-medium"> 此操作无法撤销，也无法恢复数据</span>
-                      </div>
+                      {t("deleteAccount.finalWarning")}
                     </div>
                   </div>
                 </div>
@@ -274,7 +268,7 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                         : "border-line bg-ink-800 text-muted animate-pulse",
                     )}
                   >
-                    {authError ? `错误：${authError}` : "正在从云端移除你的账户…请稍候"}
+                    {authError ? t("deleteAccount.error", authError) : t("deleteAccount.removingAccount")}
                   </div>
                 )}
 
@@ -287,7 +281,7 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                     disabled={deleting || authLoading}
                     className="flex-1 rounded-full border border-line bg-ink-800 px-4 py-2.5 text-sm text-mist transition-colors hover:bg-ink-700 disabled:opacity-50 sm:flex-none sm:px-6"
                   >
-                    返回上一步
+                    {t("deleteAccount.backToPrev")}
                   </button>
                   <button
                     onClick={() => void doDelete()}
@@ -295,7 +289,7 @@ export default function DeleteAccountSheet({ open, onClose }: Props) {
                     className="flex flex-1 items-center justify-center gap-2 rounded-full bg-red-500 px-4 py-2.5 text-sm font-medium text-white shadow-[0_10px_30px_-8px_rgba(239,68,68,0.6)] transition-colors hover:bg-red-500/90 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:min-w-[10rem] sm:px-6"
                   >
                     <Trash2 size={15} className={deleting ? "animate-pulse" : ""} />
-                    {deleting || authLoading ? "删除中…" : "确认永久删除"}
+                    {deleting || authLoading ? t("deleteAccount.deleting") : t("deleteAccount.confirmPermanentDelete")}
                   </button>
                 </div>
               </div>

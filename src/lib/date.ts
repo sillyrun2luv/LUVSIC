@@ -1,4 +1,5 @@
 // 日期与时间相关工具
+import { t } from "@/store/useI18nStore";
 
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
 
@@ -56,31 +57,31 @@ export function weekdayShort(d: Date | number): string {
 /** 时段问候：返回时段名与一句陪伴的话 */
 export function greeting(d: Date = new Date()): { period: string; subtitle: string } {
   const h = d.getHours();
-  if (h < 5) return { period: "深夜", subtitle: "太晚了，先照顾好自己" };
-  if (h < 11) return { period: "早晨", subtitle: "新的一天，从容开始" };
-  if (h < 13) return { period: "中午", subtitle: "稍作停顿，也挺好" };
-  if (h < 18) return { period: "下午", subtitle: "把节奏还给自己" };
-  if (h < 22) return { period: "晚上", subtitle: "夜色温柔，与自己相处" };
-  return { period: "深夜", subtitle: "太晚了，先照顾好自己" };
+  if (h < 5) return { period: t('date.periods.lateNight'), subtitle: t('date.greetings.lateNight') };
+  if (h < 11) return { period: t('date.periods.morning'), subtitle: t('date.greetings.morning') };
+  if (h < 13) return { period: t('date.periods.noon'), subtitle: t('date.greetings.noon') };
+  if (h < 18) return { period: t('date.periods.afternoon'), subtitle: t('date.greetings.afternoon') };
+  if (h < 22) return { period: t('date.periods.evening'), subtitle: t('date.greetings.evening') };
+  return { period: t('date.periods.lateNight'), subtitle: t('date.greetings.lateNight') };
 }
 
 /** 格式化日期：2026年8月10日 */
 export function formatDateCN(d: Date | number): string {
   const date = typeof d === "number" ? new Date(d) : d;
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  return t('date.formatFullCN', date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
 
 /** 格式化日期：8月10日 */
 export function formatDateShort(d: Date | number): string {
   const date = typeof d === "number" ? new Date(d) : d;
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
+  return t('date.formatShortCN', date.getMonth() + 1, date.getDate());
 }
 
 /** 格式化完整日期时间：2026-08-10 14:08 */
 export function formatDateTime(d: Date | number): string {
   const date = typeof d === "number" ? new Date(d) : d;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return t('date.formatDateTime', date.getFullYear(), pad(date.getMonth() + 1), pad(date.getDate()), pad(date.getHours()), pad(date.getMinutes()));
 }
 
 /** 格式化时间：14:08 */
@@ -88,7 +89,7 @@ export function formatTime(d: Date | number): string {
   const date = typeof d === "number" ? new Date(d) : d;
   const h = String(date.getHours()).padStart(2, "0");
   const m = String(date.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
+  return t('date.formatTime', h, m);
 }
 
 /** 用于 datetime-local input 的值：2026-08-10T14:08 */
@@ -105,9 +106,9 @@ export function fromDatetimeLocalValue(v: string): number {
 
 /** 把分钟时长格式化为可读：1小时20分 / 45分 / 30秒 / 无 */
 export function formatDuration(minutes: number): string {
-  if (!minutes || minutes <= 0) return "无";
+  if (!minutes || minutes <= 0) return t('date.none');
   const totalSec = Math.round(minutes * 60);
-  if (totalSec < 60) return `${totalSec}秒`;
+  if (totalSec < 60) return t('date.durationSeconds', totalSec);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
@@ -122,26 +123,26 @@ export function formatDuration(minutes: number): string {
 export function formatInterval(ms: number): string {
   if (ms < 0) ms = 0;
   const min = Math.floor(ms / 60000);
-  if (min < 1) return "刚刚";
-  if (min < 60) return `${min}分钟前`;
+  if (min < 1) return t('common.justNow');
+  if (min < 60) return t('date.intervalMinutesAgo', min);
   const hours = Math.floor(min / 60);
   if (hours < 24) {
     const m = min % 60;
-    return m > 0 ? `${hours}小时${m}分前` : `${hours}小时前`;
+    return m > 0 ? t('date.intervalHoursMinutesAgo', hours, m) : t('date.intervalHoursAgo', hours);
   }
   const days = Math.floor(hours / 24);
   const h = hours % 24;
-  if (days < 30) return h > 0 ? `${days}天${h}小时前` : `${days}天前`;
+  if (days < 30) return h > 0 ? t('date.intervalDaysHoursAgo', days, h) : t('date.intervalDaysAgo', days);
   const months = Math.floor(days / 30);
-  return `${months}个月前`;
+  return t('date.intervalMonthsAgo', months);
 }
 
 /** 相对当前的时间描述（用于记录项） */
 export function relativeTime(ts: number, now: Date = new Date()): string {
   const diff = now.getTime() - ts;
-  if (isSameDay(ts, now)) return `今天 ${formatTime(ts)}`;
+  if (isSameDay(ts, now)) return t('date.relativeToday', formatTime(ts));
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  if (isSameDay(ts, yesterday)) return `昨天 ${formatTime(ts)}`;
+  if (isSameDay(ts, yesterday)) return t('date.relativeYesterday', formatTime(ts));
   return `${formatDateShort(ts)} ${formatTime(ts)}`;
 }

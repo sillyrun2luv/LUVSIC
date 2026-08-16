@@ -45,6 +45,7 @@ export interface Settings {
   reminder: ReminderConfig; // 每日提醒
   lock: LockConfig; // 密码锁
   showFloatingTimer: boolean; // 是否显示右下角浮动计时按钮
+  overlayTimer: boolean; // 计时时是否显示全局悬浮窗（应用外，仅原生）
 }
 
 export type ViewKey = "overview" | "record" | "friends" | "profile";

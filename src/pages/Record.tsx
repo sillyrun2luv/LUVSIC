@@ -1,15 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import RecordForm from "@/components/RecordForm";
 import { useRecordStore } from "@/store/useRecordStore";
 import { useUIStore } from "@/store/useUIStore";
 import type { RecordEntry } from "@/types";
 import SubTabs from "@/components/SubTabs";
 import History from "@/pages/History";
-import { Play, Clock, ChevronDown, ChevronUp, Sparkles, Eye, ShieldCheck } from "lucide-react";
+import {
+  Play, Clock, ChevronDown, ChevronUp, Sparkles, Eye, ShieldCheck,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { t } from "@/store/useI18nStore";
 import { formatDuration } from "@/lib/date";
 import { streakDays } from "@/lib/stats";
+import { toast } from "@/store/useToastStore";
 
 type SubTab = "new" | "history";
 
@@ -20,6 +24,8 @@ export default function Record() {
   const goRecord = useUIStore((s) => s.goRecord);
   const setView = useUIStore((s) => s.setView);
   const openTimerStart = useUIStore((s) => s.openTimerStart);
+  const cancelTimer = useUIStore((s) => s.cancelTimer);
+  const timer = useUIStore((s) => s.timer);
   const loggedIn = useAuthStore((s) => !!s.user?.id);
   const [showCatchup, setShowCatchup] = useState(false);
 
@@ -40,8 +46,8 @@ export default function Record() {
         value={subTab}
         onChange={(k) => setSubTab(k as SubTab)}
         tabs={[
-          { key: "new", label: "记录" },
-          { key: "history", label: "历史" },
+          { key: "new", label: t('record.title') },
+          { key: "history", label: t('record.history') },
         ]}
       />
       {subTab === "new" ? (
@@ -50,20 +56,20 @@ export default function Record() {
           {!editing && (
             <div className="flex items-center gap-2.5 rounded-xl border border-teal-500/20 bg-teal-500/5 px-4 py-2.5 text-xs leading-relaxed text-teal-200/80">
               <ShieldCheck size={14} className="shrink-0 text-teal-300" />
-              <span>请注意环境私密安全，确保无人打扰后再开始记录</span>
+              <span>{t('record.privacyTip')}</span>
             </div>
           )}
 
           <header>
-            <p className="label-eyebrow mb-2">{editing ? "编辑" : "记录"}</p>
+            <p className="label-eyebrow mb-2">{editing ? t('record.edit') : t('record.title')}</p>
             <h1 className="font-display text-4xl font-medium text-cream">
               {editing ? (
                 <>
-                  修改<em className="not-italic text-amber-glow">这一笔</em>
+                  {t('record.edit')}<em className="not-italic text-amber-glow">{t('record.thisOne')}</em>
                 </>
               ) : (
                 <>
-                  写下<em className="not-italic text-amber-glow">这一笔</em>
+                  {t('record.write')}<em className="not-italic text-amber-glow">{t('record.thisOne')}</em>
                 </>
               )}
             </h1>
@@ -81,14 +87,13 @@ export default function Record() {
                   <div className="flex-1">
                     <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-amber/15 px-2.5 py-1 text-[11px] font-medium text-amber-glow ring-1 ring-amber/30">
                       <Sparkles size={11} />
-                      推荐方式
+                      {t('record.recommended')}
                     </div>
                     <h2 className="mt-3 font-display text-2xl text-cream">
-                      开始<em className="not-italic text-amber-glow">真实计时</em>
+                      {t('record.start')}<em className="not-italic text-amber-glow">{t('record.startRealTimer').replace(t('record.start'), '')}</em>
                     </h2>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                      开始后随时停止，时长自动记录。
-                      {loggedIn && "只计按钮产生的时长才会进入排行榜"}
+                      {loggedIn ? t('record.timerDesc') : t('record.timerDesc').split('。')[0] + '。'}
                     </p>
                   </div>
 
@@ -102,12 +107,12 @@ export default function Record() {
                       "transition-all duration-200 hover:scale-105 hover:bg-amber-glow",
                       "active:scale-95",
                     )}
-                    aria-label="开始计时"
+                    aria-label={t('timerStart.start')}
                   >
                     <span className="absolute inset-0 rounded-full bg-amber/40 blur-xl opacity-70 transition-opacity group-hover:opacity-100" />
                     <span className="relative flex flex-col items-center gap-0.5">
                       <Play size={28} strokeWidth={2.5} fill="currentColor" className="-mr-0.5" />
-                      <span className="text-[11px] font-semibold tracking-wide">开始</span>
+                      <span className="text-[11px] font-semibold tracking-wide">{t('record.start')}</span>
                     </span>
                   </button>
                 </div>
@@ -116,18 +121,17 @@ export default function Record() {
                 <div className="relative mt-5 flex items-center gap-3 rounded-xl border border-amber/25 bg-amber/5 p-3 text-xs leading-relaxed text-muted">
                   <Eye size={14} className="shrink-0 text-amber-glow" />
                   <p>
-                    建议每次开始前按一下计时按钮，结束时再点停止。
-                    这样记录的时长最准确，也能参加排行榜。
-                    忘记计时了？翻到页面底部的「补录一条」。
+                    {t('record.timerAdvice')}
                   </p>
                 </div>
 
                 {/* 小统计条 */}
                 <div className="relative mt-5 grid grid-cols-3 gap-3">
-                  <StatPill label="计时累计" value={formatDuration(timerOnlySeconds / 60)} accent />
-                  <StatPill label="总记录" value={String(records.length)} />
-                  <StatPill label="连续打卡" value={streak > 0 ? `${streak} 天` : "无"} />
+                  <StatPill label={t('record.totalTime')} value={formatDuration(timerOnlySeconds / 60)} accent />
+                  <StatPill label={t('record.totalRecords')} value={String(records.length)} />
+                  <StatPill label={t('record.streakDays')} value={streak > 0 ? `${streak} 天` : t('common.none')} />
                 </div>
+
               </div>
             </section>
           )}
@@ -145,10 +149,10 @@ export default function Record() {
                   </span>
                   <div>
                     <div className="text-sm text-mist">
-                      {showCatchup ? "收起" : "展开"}补录一条
+                      {showCatchup ? t('record.collapseManual') : t('record.expandManual')}
                     </div>
                     <div className="text-[11px] text-muted">
-                      手动填写时间和时长（不计入排行榜）
+                      {t('record.manualDesc')}
                     </div>
                   </div>
                 </div>
@@ -163,7 +167,7 @@ export default function Record() {
                 <div className="mt-3 space-y-3 rounded-2xl border border-dashed border-mist/30 p-2">
                   <div className="flex items-center gap-2 px-3 pt-2 text-[11px] text-muted">
                     <Eye size={12} className="text-mist/70" />
-                    <span>以下记录仅在本地/云端保存回看，不会进入全球/好友排行榜</span>
+                    <span>{t('record.nonTimerNotice')}</span>
                   </div>
                   <RecordForm
                     editing={null}

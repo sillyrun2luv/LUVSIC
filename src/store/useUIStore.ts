@@ -8,6 +8,69 @@ interface TimerState {
   tools: string[];
 }
 
+/* ---------------------------------------------------------------------------
+ * 计时状态持久化：startTime 用墙钟时间，App 被杀/退出后重开，
+ * 依据 startTime 与当前时间差即可继续"真实计时"。
+ * ------------------------------------------------------------------------- */
+const TIMER_STATE_KEY = "ziweiba_timer_state";
+const TIMER_LAST_KEY = "ziweiba_timer_last"; // 上次计时用的形式/道具
+
+function hydrateTimer(): TimerState {
+  try {
+    const raw = localStorage.getItem(TIMER_STATE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (
+        p &&
+        p.running === true &&
+        typeof p.startTime === "number" &&
+        Array.isArray(p.forms) &&
+        Array.isArray(p.tools) &&
+        p.startTime <= Date.now() + 5000
+      ) {
+        return { running: true, startTime: p.startTime, forms: p.forms, tools: p.tools };
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return { running: false, startTime: null, forms: [], tools: [] };
+}
+
+function persistTimer(timer: TimerState) {
+  try {
+    if (timer.running) localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(timer));
+    else localStorage.removeItem(TIMER_STATE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function persistLastSelection(forms: string[], tools: string[]) {
+  try {
+    localStorage.setItem(TIMER_LAST_KEY, JSON.stringify({ forms, tools }));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** 读取上次计时使用的形式/道具（供"一键直接开始计时"复用） */
+export function getLastTimerSelection(): { forms: string[]; tools: string[] } {
+  try {
+    const raw = localStorage.getItem(TIMER_LAST_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      return {
+        forms: Array.isArray(p.forms) ? p.forms : [],
+        tools: Array.isArray(p.tools) ? p.tools : [],
+      };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { forms: [], tools: [] };
+}
+
 interface UIState {
   view: ViewKey;
   editingId: string | null;
@@ -95,7 +158,7 @@ interface UIState {
 export const useUIStore = create<UIState>((set) => ({
   view: "overview",
   editingId: null,
-  timer: { running: false, startTime: null, forms: [], tools: [] },
+  timer: hydrateTimer(),
 
   showTimerStart: false,
   showTimerStop: false,
@@ -169,25 +232,29 @@ export const useUIStore = create<UIState>((set) => ({
   openTimerStart: () => set({ showTimerStart: true }),
   closeTimerStart: () => set({ showTimerStart: false }),
 
-  startTimerWithSelection: (forms, tools) =>
-    set({
-      showTimerStart: false,
-      timer: { running: true, startTime: Date.now(), forms, tools },
-    }),
+  startTimerWithSelection: (forms, tools) => {
+    const timer = { running: true, startTime: Date.now(), forms, tools };
+    persistTimer(timer);
+    persistLastSelection(forms, tools);
+    set({ showTimerStart: false, timer });
+  },
 
   openTimerStop: (duration) =>
     set({ showTimerStop: true, timerDuration: duration }),
 
-  closeTimerStop: () =>
-    set({
-      showTimerStop: false,
-      timer: { running: false, startTime: null, forms: [], tools: [] },
-    }),
+  closeTimerStop: () => {
+    const timer = { running: false, startTime: null, forms: [], tools: [] };
+    persistTimer(timer);
+    set({ showTimerStop: false, timer });
+  },
 
-  cancelTimer: () =>
+  cancelTimer: () => {
+    const timer = { running: false, startTime: null, forms: [], tools: [] };
+    persistTimer(timer);
     set({
       showTimerStart: false,
       showTimerStop: false,
-      timer: { running: false, startTime: null, forms: [], tools: [] },
-    }),
+      timer,
+    });
+  },
 }));

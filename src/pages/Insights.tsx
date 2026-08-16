@@ -10,6 +10,7 @@ import {
   totalStats,
 } from "@/lib/stats";
 import { formatDuration, formatInterval } from "@/lib/date";
+import { t } from "@/store/useI18nStore";
 import StatCard from "@/components/StatCard";
 import SectionTitle from "@/components/SectionTitle";
 import TrendChart from "@/components/charts/TrendChart";
@@ -41,20 +42,20 @@ export default function Insights() {
     return (
       <div className="animate-fadeIn">
         <header className="mb-8">
-          <p className="label-eyebrow mb-2">洞察</p>
+          <p className="label-eyebrow mb-2">{t('insights.title')}</p>
           <h1 className="font-display text-4xl font-medium text-cream">
-            看见<em className="not-italic text-amber-glow">节律</em>
+            {t('insights.seeRhythm').slice(0, 2)}<em className="not-italic text-amber-glow">{t('insights.seeRhythm').slice(2)}</em>
           </h1>
         </header>
         <div className="surface mb-4 flex flex-col items-center gap-3 p-12 text-center">
           <ScoreRing score={0} />
           <p className="max-w-xs text-sm text-muted">
-            还没有足够的数据。先在「记录」里写下几次，这里会慢慢浮现你的节律。
+            {t('insights.needMoreData')}
           </p>
         </div>
         <div className="rounded-2xl border border-amber/20 bg-amber/5 px-4 py-3 text-xs leading-relaxed text-amber-glow/90">
           <span className="mr-1">✨</span>
-          小提示：单次时长 15~20 分钟左右最好哦，既放松又不伤身。以身体舒服为准，不用追求时长。
+          {t('insights.healthTip')}
         </div>
       </div>
     );
@@ -63,23 +64,23 @@ export default function Insights() {
   return (
     <div className="animate-fadeIn space-y-8">
       <header>
-        <p className="label-eyebrow mb-2">洞察</p>
+        <p className="label-eyebrow mb-2">{t('insights.title')}</p>
         <h1 className="font-display text-4xl font-medium text-cream">
-          看见<em className="not-italic text-amber-glow">节律</em>
+          {t('insights.seeRhythm').slice(0, 2)}<em className="not-italic text-amber-glow">{t('insights.seeRhythm').slice(2)}</em>
         </h1>
       </header>
 
       {/* 总览 */}
       <section className="grid grid-cols-2 gap-3">
-        <StatCard label="总次数" value={totals.count} unit="次" accent />
-        <StatCard label="总时长" value={formatDuration(totals.totalMinutes)} />
+        <StatCard label={t('insights.totalCount')} value={totals.count} unit={t('insights.countUnit')} accent />
+        <StatCard label={t('insights.totalDuration')} value={formatDuration(totals.totalMinutes)} />
         <StatCard
-          label="平均时长"
+          label={t('insights.avgDuration')}
           value={totals.avgMinutes}
-          unit="分"
+          unit={t('insights.minuteUnit')}
         />
         <StatCard
-          label="平均间隔"
+          label={t('insights.avgInterval')}
           value={totals.avgIntervalMs > 0 ? formatInterval(totals.avgIntervalMs) : "—"}
         />
       </section>
@@ -87,7 +88,7 @@ export default function Insights() {
       {/* 小提示 */}
       <div className="animate-fadeIn rounded-2xl border border-amber/20 bg-amber/5 px-4 py-3 text-xs leading-relaxed text-amber-glow/90">
         <span className="mr-1">✨</span>
-        小提示：单次时长 15~20 分钟左右最好哦，既放松又不伤身。以身体舒服为准，不用追求时长。
+        {t('insights.healthTip')}
       </div>
 
       {/* 规律性评分 */}
@@ -96,45 +97,45 @@ export default function Insights() {
           <ScoreRing score={score} />
         ) : (
           <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full border border-line text-center text-xs text-muted">
-            数据不足
+            {t('stats.needMoreRecords')}
           </div>
         )}
         <div className="flex-1 text-center sm:text-left">
-          <div className="label-eyebrow mb-2">节律评分</div>
+          <div className="label-eyebrow mb-2">{t('insights.rhythmScore')}</div>
           <p className="font-display text-xl text-cream">{advice}</p>
           <p className="mt-2 text-xs text-muted">
-            基于近 30 天间隔稳定性估算，仅作自我觉察参考。
+            {t('insights.scoreNote')}
           </p>
         </div>
       </section>
 
       {/* 30 天趋势 */}
       <section className="surface p-5">
-        <SectionTitle eyebrow="趋势" title="近 30 天" />
+        <SectionTitle eyebrow={t('insights.trend')} title={t('insights.last30Days')} />
         <TrendChart data={trend} />
       </section>
 
       {/* 时段分布 */}
       <section className="surface p-5">
-        <SectionTitle eyebrow="时段" title="一天之中" />
+        <SectionTitle eyebrow={t('insights.timeOfDay')} title={t('insights.withinDay')} />
         <HourHeatmap buckets={hours} />
       </section>
 
       {/* 形式偏好 */}
       <section className="surface p-5">
-        <SectionTitle eyebrow="偏好" title="刺激形式" />
+        <SectionTitle eyebrow={t('insights.preference')} title={t('insights.formPreference')} />
         <MaterialBars data={forms} />
       </section>
 
       {/* 道具偏好 */}
       <section className="surface p-5">
-        <SectionTitle eyebrow="偏好" title="辅助道具" />
+        <SectionTitle eyebrow={t('insights.preference')} title={t('insights.toolPreference')} />
         <MaterialBars data={tools} />
       </section>
 
       {/* 每日习惯 */}
       <section>
-        <SectionTitle eyebrow="习惯" title="每日提醒与目标" />
+        <SectionTitle eyebrow={t('insights.habit')} title={t('insights.dailyReminderGoal')} />
         <div className="surface p-5">
           <ReminderSettings />
         </div>
@@ -142,10 +143,10 @@ export default function Insights() {
 
       {/* 数据管理 */}
       <section>
-        <SectionTitle eyebrow="数据" title="备份与清空" />
+        <SectionTitle eyebrow={t('insights.data')} title={t('insights.backupClear')} />
         <div className="surface p-5">
           <p className="mb-4 text-xs leading-relaxed text-muted">
-            所有数据仅保存在这台设备的浏览器里。换设备或清理浏览器前，请导出备份。
+            {t('insights.localOnlyWarning')}
           </p>
           <BackupBar onClearAll={() => setConfirmClear(true)} />
         </div>
@@ -154,9 +155,9 @@ export default function Insights() {
       <ConfirmDialog
         open={confirmClear}
         danger
-        title="清空全部记录？"
-        message="这将删除你所有的记录，且无法恢复。建议先导出备份。"
-        confirmText="确认清空"
+        title={t('insights.clearAllConfirm')}
+        message={t('insights.clearAllWarning')}
+        confirmText={t('insights.confirmClear')}
         onConfirm={() => {
           clearAll();
           setConfirmClear(false);

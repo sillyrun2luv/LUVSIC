@@ -21,14 +21,15 @@ import {
 } from "@/store/useAnnouncementStore";
 import { toast } from "@/store/useToastStore";
 import { cn } from "@/lib/utils";
+import { t } from "@/store/useI18nStore";
 
 const STYLES: Record<
   AnnouncementType,
-  { Icon: typeof Megaphone; color: string; bg: string; label: string }
+  { Icon: typeof Megaphone; color: string; bg: string; labelKey: string }
 > = {
-  info: { Icon: Megaphone, color: "text-mist", bg: "bg-mist/15", label: "公告" },
-  update: { Icon: Sparkles, color: "text-amber-glow", bg: "bg-amber/15", label: "更新" },
-  warn: { Icon: AlertCircle, color: "text-amber-glow", bg: "bg-amber/15", label: "提醒" },
+  info: { Icon: Megaphone, color: "text-mist", bg: "bg-mist/15", labelKey: "announcement.title" },
+  update: { Icon: Sparkles, color: "text-amber-glow", bg: "bg-amber/15", labelKey: "announcement.typeUpdate" },
+  warn: { Icon: AlertCircle, color: "text-amber-glow", bg: "bg-amber/15", labelKey: "announcement.typeNotice" },
 };
 
 export default function AnnouncementSheet() {
@@ -55,7 +56,7 @@ function SheetShell({ children }: { children: React.ReactNode }) {
   }, [close]);
 
   return createPortal(
-    <div className="fixed inset-0 z-[130] flex items-end justify-center">
+    <div className="fixed inset-0 z-[130] pb-[72px] flex items-end justify-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
         onClick={close}
@@ -64,7 +65,7 @@ function SheetShell({ children }: { children: React.ReactNode }) {
         <button
           onClick={close}
           className="absolute right-4 top-4 z-10 text-muted hover:text-mist"
-          aria-label="关闭"
+          aria-label={t('announcement.close')}
         >
           <X size={18} />
         </button>
@@ -96,7 +97,7 @@ function SingleView() {
         onClick={dismiss}
         className="w-full rounded-full bg-cream py-3 text-sm font-medium text-ink-900 transition-colors hover:bg-mist"
       >
-        我知道了
+        {t('announcement.gotIt')}
       </button>
     </>
   );
@@ -117,14 +118,14 @@ function ListView() {
           <Megaphone size={20} />
         </div>
         <div>
-          <h3 className="font-display text-lg text-cream">公告中心</h3>
-          <p className="text-xs text-muted">重要更新与通知</p>
+          <h3 className="font-display text-lg text-cream">{t('announcement.centerTitle')}</h3>
+          <p className="text-xs text-muted">{t('announcement.centerDesc')}</p>
         </div>
       </div>
       {loading ? (
-        <div className="py-10 text-center text-xs text-muted">加载中…</div>
+        <div className="py-10 text-center text-xs text-muted">{t('announcement.loading')}</div>
       ) : all.length === 0 ? (
-        <div className="py-10 text-center text-xs text-muted">暂无公告</div>
+        <div className="py-10 text-center text-xs text-muted">{t('announcement.empty')}</div>
       ) : (
         <ul className="space-y-2">
           {all.map((a) => {
@@ -149,14 +150,14 @@ function ListView() {
                       <div className="truncate text-sm text-cream">{a.title}</div>
                       {a.active && (
                         <span className="rounded-full bg-amber/15 px-1.5 py-0.5 text-[9px] text-amber-glow ring-1 ring-amber/30">
-                          当前
+                          {t('announcement.currentTag')}
                         </span>
                       )}
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-[11px] text-muted">
                       <span>{formatDate(a.created_at)}</span>
-                      <span>·</span>
-                      <span>{s.label}</span>
+                      <span>{t('announcement.dateSeparator')}</span>
+                      <span>{t(s.labelKey)}</span>
                     </div>
                   </div>
                 </button>
@@ -177,7 +178,7 @@ function ListDetailView({ item, onBack }: { item: Announcement; onBack: () => vo
         onClick={onBack}
         className="mb-3 flex items-center gap-1 text-xs text-muted hover:text-mist"
       >
-        <ChevronLeft size={14} /> 返回列表
+        <ChevronLeft size={14} /> {t('announcement.backToList')}
       </button>
       <div className="mb-4 flex items-center gap-3">
         <div
@@ -192,7 +193,7 @@ function ListDetailView({ item, onBack }: { item: Announcement; onBack: () => vo
         <div className="min-w-0">
           <h3 className="truncate font-display text-lg text-cream">{item.title}</h3>
           <p className="text-[11px] text-muted">
-            {formatDate(item.created_at)} · {s.label}
+            {formatDate(item.created_at)} {t('announcement.dateSeparator')} {t(s.labelKey)}
           </p>
         </div>
       </div>
@@ -228,8 +229,8 @@ function AdminView() {
           <Pencil size={20} />
         </div>
         <div>
-          <h3 className="font-display text-lg text-cream">公告管理</h3>
-          <p className="text-xs text-muted">仅管理员可见</p>
+          <h3 className="font-display text-lg text-cream">{t('announcement.editTitle')}</h3>
+          <p className="text-xs text-muted">{t('profile.announcementManageDesc')}</p>
         </div>
       </div>
 
@@ -237,11 +238,11 @@ function AdminView() {
       <div className="mb-4 flex gap-2">
         <TabBtn active={tab === "edit"} onClick={() => setTab("edit")}>
           <Plus size={12} />
-          {editingId ? "编辑公告" : "发布新公告"}
+          {editingId ? t('announcement.editTitle') : t('announcement.publishNew')}
         </TabBtn>
         <TabBtn active={tab === "list"} onClick={() => setTab("list")}>
           <Users size={12} />
-          历史公告
+          {t('announcement.historyTab')}
         </TabBtn>
       </div>
 
@@ -249,15 +250,15 @@ function AdminView() {
         <div className="space-y-3">
           {/* 类型选择 */}
           <div>
-            <div className="mb-1.5 text-xs text-muted">类型</div>
+            <div className="mb-1.5 text-xs text-muted">{t('announcement.type')}</div>
             <div className="flex gap-2">
-              {(["update", "info", "warn"] as AnnouncementType[]).map((t) => {
-                const s = STYLES[t];
-                const active = form.type === t;
+              {(["update", "info", "warn"] as AnnouncementType[]).map((type) => {
+                const s = STYLES[type];
+                const active = form.type === type;
                 return (
                   <button
-                    key={t}
-                    onClick={() => setFormField("type", t)}
+                    key={type}
+                    onClick={() => setFormField("type", type)}
                     className={cn(
                       "flex flex-1 items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors",
                       active
@@ -266,7 +267,7 @@ function AdminView() {
                     )}
                   >
                     <s.Icon size={13} />
-                    {s.label}
+                    {t(s.labelKey)}
                   </button>
                 );
               })}
@@ -274,28 +275,28 @@ function AdminView() {
           </div>
 
           <div>
-            <div className="mb-1.5 text-xs text-muted">标题</div>
+            <div className="mb-1.5 text-xs text-muted">{t('announcement.titleField')}</div>
             <input
               value={form.title}
               onChange={(e) => setFormField("title", e.target.value)}
               maxLength={80}
-              placeholder="公告标题（最多 80 字）"
+              placeholder={t('announcement.titleField')}
               className="w-full rounded-lg border border-line bg-ink-800 px-3 py-2 text-sm text-cream outline-none transition-colors focus:border-amber/50"
             />
           </div>
 
           <div>
-            <div className="mb-1.5 text-xs text-muted">内容</div>
+            <div className="mb-1.5 text-xs text-muted">{t('announcement.content')}</div>
             <textarea
               value={form.content}
               onChange={(e) => setFormField("content", e.target.value)}
               maxLength={2000}
               rows={7}
-              placeholder="公告正文（支持换行，最多 2000 字）"
+              placeholder={t('announcement.content')}
               className="w-full resize-none rounded-lg border border-line bg-ink-800 px-3 py-2 text-sm leading-relaxed text-cream outline-none transition-colors focus:border-amber/50"
             />
             <div className="mt-1 text-right text-[10px] text-muted">
-              {form.content.length} / 2000
+              {t('announcement.charCount', form.content.length)}
             </div>
           </div>
 
@@ -304,35 +305,35 @@ function AdminView() {
               onClick={() => newForm()}
               className="flex-1 rounded-full border border-line px-4 py-2.5 text-sm text-mist hover:bg-ink-800"
             >
-              清空
+              {t('announcement.clear')}
             </button>
             <button
               onClick={async () => {
                 if (saving) return;
                 if (!form.title.trim() || !form.content.trim()) {
-                  toast("请填写标题和内容", "warn");
+                  toast(t('announcement.titleField') + t('announcement.content'), "warn");
                   return;
                 }
                 const ok = await save();
-                toast(ok ? (editingId ? "公告已更新" : "公告已发布") : "保存失败，请稍后重试", ok ? "success" : "warn");
+                toast(ok ? (editingId ? t('announcement.saveChanges') : t('announcement.publishNow')) : t('common.processing'), ok ? "success" : "warn");
               }}
               disabled={saving}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-amber px-4 py-2.5 text-sm text-ink-950 hover:bg-amber-glow disabled:opacity-60"
             >
               <Save size={14} />
-              {saving ? "保存中…" : editingId ? "保存修改" : "立即发布"}
+              {saving ? t('announcement.saving') : editingId ? t('announcement.saveChanges') : t('announcement.publishNow')}
             </button>
           </div>
           <p className="pt-1 text-[11px] leading-relaxed text-muted/80">
-            发布后会自动替换旧公告为"当前"，所有用户下次打开 App 会自动弹出。编辑保存也会让用户重新看到这条公告。
+            {t('announcement.publishNote')}
           </p>
         </div>
       ) : (
         <>
           {loading ? (
-            <div className="py-10 text-center text-xs text-muted">加载中…</div>
+            <div className="py-10 text-center text-xs text-muted">{t('announcement.loading')}</div>
           ) : all.length === 0 ? (
-            <div className="py-10 text-center text-xs text-muted">暂无公告</div>
+            <div className="py-10 text-center text-xs text-muted">{t('announcement.empty')}</div>
           ) : (
             <ul className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
               {all.map((a) => (
@@ -353,12 +354,12 @@ function AdminView() {
                         </div>
                         {a.active && (
                           <span className="rounded-full bg-amber/15 px-1.5 py-0.5 text-[9px] text-amber-glow ring-1 ring-amber/30 shrink-0">
-                            当前
+                            {t('announcement.currentTag')}
                           </span>
                         )}
                       </div>
                       <div className="mt-1 text-[11px] text-muted">
-                        {formatDate(a.created_at)} · {(STYLES[a.type] ?? STYLES.info).label}
+                        {formatDate(a.created_at)} {t('announcement.dateSeparator')} {t((STYLES[a.type] ?? STYLES.info).labelKey)}
                       </div>
                     </div>
                   </div>
@@ -370,34 +371,34 @@ function AdminView() {
                       }}
                       className="flex items-center gap-1 rounded-full border border-line px-3 py-1 text-[11px] text-mist hover:border-amber/40 hover:text-amber-glow"
                     >
-                      <Pencil size={11} /> 编辑
+                      <Pencil size={11} /> {t('announcement.editTitle')}
                     </button>
                     {a.active ? (
                       <button
                         onClick={async () => {
                           const ok = await deactivate(a.id);
-                          toast(ok ? "已下线" : "操作失败", ok ? "success" : "warn");
+                          toast(ok ? t('announcement.offline') : t('common.processing'), ok ? "success" : "warn");
                         }}
                         className="flex items-center gap-1 rounded-full border border-line px-3 py-1 text-[11px] text-mist hover:border-rose-500/40 hover:text-rose-300"
                       >
-                        <PowerOff size={11} /> 下线
+                        <PowerOff size={11} /> {t('announcement.offline')}
                       </button>
                     ) : (
                       <button
                         onClick={async () => {
                           const ok = await activate(a.id);
-                          toast(ok ? "已上线" : "操作失败", ok ? "success" : "warn");
+                          toast(ok ? t('announcement.online') : t('common.processing'), ok ? "success" : "warn");
                         }}
                         className="flex items-center gap-1 rounded-full border border-line px-3 py-1 text-[11px] text-mist hover:border-emerald-500/40 hover:text-emerald-300"
                       >
-                        <Power size={11} /> 上线
+                        <Power size={11} /> {t('announcement.online')}
                       </button>
                     )}
                     <button
                       onClick={() => setDeleteTarget(a)}
                       className="flex items-center gap-1 rounded-full border border-rose-500/30 px-3 py-1 text-[11px] text-rose-300/80 hover:border-rose-500/60 hover:text-rose-300"
                     >
-                      <Trash2 size={11} /> 删除
+                      <Trash2 size={11} /> {t('announcement.delete')}
                     </button>
                   </div>
                 </li>
@@ -415,7 +416,7 @@ function AdminView() {
           onConfirm={async () => {
             const ok = await deleteAnnouncement(deleteTarget.id);
             setDeleteTarget(null);
-            toast(ok ? "已彻底删除" : "删除失败，请稍后重试", ok ? "success" : "warn");
+            toast(ok ? t('announcement.permanentDelete') : t('common.processing'), ok ? "success" : "warn");
           }}
         />
       )}
@@ -481,10 +482,10 @@ function DeleteConfirm({
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-500/15 text-rose-300">
             <Trash2 size={20} />
           </div>
-          <h3 className="text-base font-medium text-cream">彻底删除公告</h3>
+          <h3 className="text-base font-medium text-cream">{t('announcement.permanentDelete')}</h3>
         </div>
         <p className="mb-5 text-sm leading-relaxed text-muted">
-          确定要删除「{title}」吗？删除后所有用户将无法再在公告中心看到此条，且不可恢复。
+          {t('announcement.deleteConfirm', title)}
         </p>
         <div className="flex gap-3">
           <button
@@ -492,7 +493,7 @@ function DeleteConfirm({
             disabled={busy}
             className="flex-1 rounded-full border border-line bg-ink-800 py-2.5 text-sm text-mist transition-colors hover:bg-ink-700 disabled:opacity-60"
           >
-            取消
+            {t('announcement.cancel')}
           </button>
           <button
             onClick={async () => {
@@ -503,7 +504,7 @@ function DeleteConfirm({
             disabled={busy}
             className="flex-1 rounded-full bg-rose-500/80 px-4 py-2.5 text-sm text-white transition-colors hover:bg-rose-500 disabled:opacity-60"
           >
-            {busy ? "删除中…" : "确认删除"}
+            {busy ? t('announcement.deleting') : t('announcement.confirmDelete')}
           </button>
         </div>
       </div>

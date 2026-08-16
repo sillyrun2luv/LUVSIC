@@ -1,5 +1,6 @@
 import type { RecordEntry } from "@/types";
 import { isSameDay, lastNDays, startOfDay } from "./date";
+import { t } from "@/store/useI18nStore";
 
 export interface DayCount {
   day: number; // 当天 0 点时间戳
@@ -118,18 +119,18 @@ export function regularityScore(records: RecordEntry[], now: Date = new Date()):
 
 /** 根据评分给出建议文案 */
 export function regularityAdvice(score: number | null, avgIntervalMs: number): string {
-  if (score === null) return "再记录几次，就能看出你的节律了。";
-  if (avgIntervalMs === 0) return "继续记录，让数据说话。";
+  if (score === null) return t('stats.needMoreRecords');
+  if (avgIntervalMs === 0) return t('stats.keepRecording');
   const intervalDays = avgIntervalMs / 86400000;
   if (score >= 75) {
     return intervalDays > 0
-      ? `节律稳定，平均约每 ${intervalDays.toFixed(1)} 天一次，身体有自己的节奏。`
-      : "节律稳定，身体有自己的节奏。";
+      ? t('stats.stableWithInterval', intervalDays.toFixed(1))
+      : t('stats.stable');
   }
   if (score >= 45) {
-    return "基本规律，偶尔波动很正常，不必苛责自己。";
+    return t('stats.mostlyRegular');
   }
-  return "间隔起伏较大，可以试着让作息更稳定一些。";
+  return t('stats.irregular');
 }
 
 /** 连续记录天数（streak）：连续有记录的天数，含今天或昨天 */

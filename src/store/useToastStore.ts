@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { t } from "@/store/useI18nStore";
 
 export interface ToastAction {
   label: string;

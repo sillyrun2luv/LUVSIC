@@ -1,9 +1,19 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Loader2, Clock, Hash, CalendarDays, ShieldOff } from "lucide-react";
+import { X, Loader2, Clock, Hash, CalendarDays, ShieldOff, Heart, Sparkles } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { fetchFriendStats, formatDuration, type FriendStats } from "@/lib/leaderboard";
 import { toast } from "@/store/useToastStore";
+import { t } from "@/store/useI18nStore";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import {
+  sendFriendReminder,
+  getFriendRemindQuotaToday,
+  pickRandomReminderMessage,
+  type FriendReminderCategory,
+  type FriendReminderQuota,
+} from "@/lib/friends";
 import { cn } from "@/lib/utils";
 import Avatar from "./Avatar";
 
@@ -21,6 +31,9 @@ export default function FriendDetailSheet() {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<FriendStats | null>(null);
   const [denied, setDenied] = useState(false); // 对方未开放
+
+  const loggedIn = useAuthStore((s) => !!s.user);
+  const showRemind = isSupabaseConfigured && loggedIn;
 
   useEffect(() => {
     if (!open || !userId) {
@@ -56,7 +69,7 @@ export default function FriendDetailSheet() {
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-[100] pb-[72px] sm:pb-0 flex items-end justify-center sm:items-center">
       {/* 遮罩 */}
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
@@ -89,6 +102,11 @@ export default function FriendDetailSheet() {
 
         {/* Body */}
         <div className="max-h-[60vh] overflow-y-auto p-5">
+          {showRemind && userId && (
+            <div className="mb-4">
+              <RemindPanel userId={userId} name={name} />
+            </div>
+          )}
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 size={22} className="animate-spin text-amber-glow" />
@@ -184,6 +202,135 @@ function StatsView({ stats }: { stats: FriendStats }) {
         )}
       </div>
     </div>
+  );
+}
+
+function RemindPanel({ userId, name }: { userId: string; name: string }) {
+  const [quota, setQuota] = useState<FriendReminderQuota | null>(null);
+  const [sending, setSending] = useState<FriendReminderCategory | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getFriendRemindQuotaToday(userId)
+      .then((q) => { if (!cancelled) setQuota(q); })
+      .catch(() => { if (!cancelled) setQuota({ remaining_today: 0, used_today: 0 }); });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const handleSend = async (category: FriendReminderCategory) => {
+    if (sending) return;
+    setSending(category);
+    try {
+      const message = pickRandomReminderMessage(category);
+      const res = await sendFriendReminder(userId, category, message);
+      if (res.sent) {
+        toast(t("friendReminder.sendSuccess", message), "success");
+      } else {
+        const map: Record<string, string> = {
+          DAILY_LIMIT: t("friendReminder.errorDailyLimit"),
+          NOT_FRIENDS: t("friendReminder.errorNotFriend"),
+          NOT_LOGGED_IN: t("friendReminder.errorNotLoggedIn"),
+        };
+        toast(map[res.error || ""] || t("friendReminder.errorGeneric"), "warn");
+      }
+    } catch {
+      toast(t("friendReminder.errorGeneric"), "warn");
+    } finally {
+      setSending(null);
+      getFriendRemindQuotaToday(userId).then(setQuota).catch(() => {});
+    }
+  };
+
+  const remaining = quota?.remaining_today ?? 0;
+
+  return (
+    <div className="rounded-xl border border-line/60 bg-ink-850/60 p-4">
+      <div className="mb-3 flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/15 text-rose-300">
+          <Heart size={18} />
+        </span>
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-cream">{t("friendReminder.title")}</div>
+          <div className="text-xs text-muted">
+            {remaining > 0
+              ? t("friendReminder.quotaRemaining", remaining)
+              : t("friendReminder.quotaAllUsed")}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <RemindButton
+          icon={<Heart size={15} />}
+          title={t("friendReminder.careTitle")}
+          subtitle={t("friendReminder.careSubtitle")}
+          hint={t("friendReminder.careHint")}
+          disabled={remaining <= 0 || sending !== null}
+          loading={sending === "care_health"}
+          accent="rose"
+          onClick={() => handleSend("care_health")}
+        />
+        <RemindButton
+          icon={<Sparkles size={15} />}
+          title={t("friendReminder.relaxTitle")}
+          subtitle={t("friendReminder.relaxSubtitle")}
+          hint={t("friendReminder.relaxHint")}
+          disabled={remaining <= 0 || sending !== null}
+          loading={sending === "remember_relax"}
+          accent="violet"
+          onClick={() => handleSend("remember_relax")}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RemindButton({
+  icon,
+  title,
+  subtitle,
+  hint,
+  disabled,
+  loading,
+  accent,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  hint: string;
+  disabled: boolean;
+  loading: boolean;
+  accent: "rose" | "violet";
+  onClick: () => void;
+}) {
+  const accentBg: Record<string, string> = {
+    rose: "bg-rose-500/10 ring-rose-500/30 text-rose-300",
+    violet: "bg-violet-500/10 ring-violet-500/30 text-violet-300",
+  };
+  const accentActive: Record<string, string> = {
+    rose: "hover:bg-rose-500/20",
+    violet: "hover:bg-violet-500/20",
+  };
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex flex-col items-start gap-1 rounded-xl border border-line/60 bg-ink-900/50 p-3 text-left ring-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        accentBg[accent],
+        accentActive[accent],
+      )}
+    >
+      <span className="flex items-center gap-1.5">
+        {loading ? <Loader2 size={15} className="animate-spin" /> : icon}
+        <span className="text-sm font-medium text-cream">{title}</span>
+      </span>
+      <span className="text-[11px] leading-snug text-muted">{subtitle}</span>
+      <span className="mt-0.5 text-[10px] leading-snug text-muted/70">{hint}</span>
+    </button>
   );
 }
 

@@ -4,6 +4,7 @@ import { useRecordStore } from "@/store/useRecordStore";
 import { useUIStore } from "@/store/useUIStore";
 import { toast } from "@/store/useToastStore";
 import { cn } from "@/lib/utils";
+import { t } from "@/store/useI18nStore";
 
 export default function TimerStartSheet() {
   const open = useUIStore((s) => s.showTimerStart);
@@ -47,20 +48,20 @@ export default function TimerStartSheet() {
     if (!p) return;
     setSelectedForms((prev) => [...new Set([...prev, ...p.forms])]);
     setSelectedTools((prev) => [...new Set([...prev, ...p.tools])]);
-    toast(`已应用「${p.name}」`, "success");
+    toast(t('timerStart.presetApplied', p.name), "success");
   };
 
   const handleStart = () => {
     if (selectedForms.length === 0 && selectedTools.length === 0) {
-      toast("请至少选择一项形式或道具", "warn");
+      toast(t('timerStart.needAtLeastOne'), "warn");
       return;
     }
     startTimerWithSelection(selectedForms, selectedTools);
-    toast("计时已开始", "success");
+    toast(t('timerStart.start'), "success");
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 pb-[72px] flex items-end justify-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
         onClick={cancelTimer}
@@ -69,8 +70,8 @@ export default function TimerStartSheet() {
       <div className="surface relative z-10 w-full max-w-lg animate-slideUp p-5 pb-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="font-display text-lg text-cream">开始计时</h3>
-            <p className="text-xs text-muted">选择本次的形式和道具，开始记录</p>
+            <h3 className="font-display text-lg text-cream">{t('timerStart.title')}</h3>
+            <p className="text-xs text-muted">{t('timerStart.desc')}</p>
           </div>
           <button onClick={cancelTimer} className="text-muted hover:text-mist">
             <X size={18} />
@@ -80,7 +81,7 @@ export default function TimerStartSheet() {
         {/* 预设 */}
         {presets.length > 0 && (
           <div className="mb-4">
-            <p className="label-eyebrow mb-2">快速组合</p>
+            <p className="label-eyebrow mb-2">{t('timerStart.quickCombo')}</p>
             <div className="flex flex-wrap gap-2">
               {presets.map((p) => (
                 <button
@@ -98,7 +99,7 @@ export default function TimerStartSheet() {
 
         {/* 形式 */}
         <div className="mb-4">
-          <p className="label-eyebrow mb-2">刺激形式</p>
+          <p className="label-eyebrow mb-2">{t('timerStart.forms')}</p>
           <div className="flex flex-wrap gap-2">
             {forms.map((f) => {
               const on = selectedForms.includes(f);
@@ -118,18 +119,18 @@ export default function TimerStartSheet() {
 
         {/* 道具 */}
         <div className="mb-5">
-          <p className="label-eyebrow mb-2">辅助道具</p>
+          <p className="label-eyebrow mb-2">{t('timerStart.tools')}</p>
           <div className="flex flex-wrap gap-2">
-            {tools.map((t) => {
-              const on = selectedTools.includes(t);
+            {tools.map((tool) => {
+              const on = selectedTools.includes(tool);
               return (
                 <button
-                  key={t}
-                  onClick={() => toggleTool(t)}
+                  key={tool}
+                  onClick={() => toggleTool(tool)}
                   className={cn("chip", on && "chip-active")}
                 >
                   {on && <Check size={14} />}
-                  {t}
+                  {tool}
                 </button>
               );
             })}
@@ -141,7 +142,7 @@ export default function TimerStartSheet() {
           className="flex w-full items-center justify-center gap-2 rounded-full bg-amber py-3 font-medium text-ink-950 shadow-glow transition-all hover:bg-amber-glow"
         >
           <Play size={18} fill="currentColor" />
-          开始计时
+          {t('timerStart.start')}
         </button>
       </div>
     </div>

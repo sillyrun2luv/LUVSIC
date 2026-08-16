@@ -5,6 +5,7 @@ import { supabase, isSupabaseConfigured } from "./supabase";
 import { isSyncing } from "./sync";
 import { toast } from "@/store/useToastStore";
 import type { RecordEntry } from "@/types";
+import { t } from "@/store/useI18nStore";
 
 export type AutoSyncStatus =
   | "idle"          // 未登录 / 未启动
@@ -93,9 +94,9 @@ async function doSync() {
       .is("deleted_at", null);
     if (!cntErr && typeof cloudCount === "number" && localRecordCount < cloudCount) {
       setStatus("error");
-      errorMessage = `本地 ${localRecordCount} 条 < 云端 ${cloudCount} 条，已暂停自动同步`;
+      errorMessage = t('settings.cloudSync.localLessThanCloud', localRecordCount, cloudCount);
       toast(
-        `本地记录（${localRecordCount}条）少于云端（${cloudCount}条），已暂停自动上传。请在「设置→云端同步」选择「从云端下载」或「强制覆盖上传」`,
+        t('settings.cloudSync.localLessThanCloudWarn', localRecordCount, cloudCount),
         "warn",
       );
       setTimeout(() => {
@@ -136,13 +137,13 @@ async function doSync() {
         .from("records")
         .delete()
         .eq("user_id", userId);
-      if (delErr) throw new Error("清空云端失败: " + delErr.message);
+      if (delErr) throw new Error(t('settings.cloudSync.clearCloudFailed', delErr.message));
       const rows = localRecords.map((r) => toRow(r, userId));
       if (rows.length > 0) {
         const { error: upErr } = await supabase
           .from("records")
           .upsert(rows, { onConflict: "user_id,local_id" });
-        if (upErr) throw new Error("上传失败: " + upErr.message);
+        if (upErr) throw new Error(t('settings.cloudSync.uploadFailed', upErr.message));
       }
       forceFull = false;
     } else {
@@ -153,7 +154,7 @@ async function doSync() {
           .update({ deleted_at: Date.now() })
           .eq("user_id", userId)
           .in("local_id", deleted);
-        if (dErr) throw new Error("删除失败: " + dErr.message);
+        if (dErr) throw new Error(t('settings.cloudSync.uploadFailed', dErr.message));
         // 同步成功后清空 deleted 集合
         try { localStorage.removeItem("zwba_deleted"); } catch { /* ignore */ }
       }
@@ -167,7 +168,7 @@ async function doSync() {
           const { error: upErr } = await supabase
             .from("records")
             .upsert(chunk, { onConflict: "user_id,local_id" });
-          if (upErr) throw new Error("上传失败: " + upErr.message);
+          if (upErr) throw new Error(t('settings.cloudSync.uploadFailed', upErr.message));
         }
       }
     }
@@ -178,7 +179,7 @@ async function doSync() {
       if (_status === "synced") setStatus("idle");
     }, 3000);
   } catch (e: any) {
-    errorMessage = e?.message || "同步失败";
+    errorMessage = e?.message || t('settings.cloudSync.syncFailed');
     setStatus("error");
     // 10 秒后切回 idle，允许用户后续操作再触发
     setTimeout(() => {

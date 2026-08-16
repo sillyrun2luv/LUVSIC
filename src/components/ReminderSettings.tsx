@@ -2,28 +2,29 @@ import { Bell, BellOff, Clock, Volume2, VolumeX, Radio, CalendarDays, Repeat } f
 import { useRecordStore } from "@/store/useRecordStore";
 import { toast } from "@/store/useToastStore";
 import { useNotification } from "@/hooks/useNotification";
+import { t } from "@/store/useI18nStore";
 import { cn } from "@/lib/utils";
 import type { ReminderMode } from "@/types";
 
-const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
+const WEEKDAY_KEYS = ["calendar.weekday7", "calendar.weekday1", "calendar.weekday2", "calendar.weekday3", "calendar.weekday4", "calendar.weekday5", "calendar.weekday6"];
 
-const MODE_OPTIONS: { value: ReminderMode; label: string; icon: typeof Clock }[] = [
-  { value: "daily", label: "每天", icon: Clock },
-  { value: "weekly", label: "每周指定", icon: CalendarDays },
-  { value: "interval", label: "每隔N小时", icon: Repeat },
+const MODE_OPTIONS: { value: ReminderMode; labelKey: string; icon: typeof Clock }[] = [
+  { value: "daily", labelKey: "reminder.frequencyDaily", icon: Clock },
+  { value: "weekly", labelKey: "reminder.frequencyWeekly", icon: CalendarDays },
+  { value: "interval", labelKey: "reminder.frequencyEveryNHours", icon: Repeat },
 ];
 
 /** 生成提醒摘要文字 */
 function summarize(r: ReturnType<typeof useRecordStore.getState>["settings"]["reminder"]): string {
-  if (!r.enabled) return "关闭时不会有任何提醒";
-  if (r.mode === "daily") return `每天 ${r.time} 提醒你记录`;
+  if (!r.enabled) return t("reminder.offWhenClosed");
+  if (r.mode === "daily") return t("reminder.dailyAt", r.time);
   if (r.mode === "weekly") {
     const days = r.weekdays.length
-      ? [...r.weekdays].sort().map((w) => "周" + WEEKDAY_LABELS[w]).join("、")
-      : "未选";
-    return `${days} ${r.time} 提醒`;
+      ? [...r.weekdays].sort().map((w) => "周" + t(WEEKDAY_KEYS[w])).join("、")
+      : t("common.none");
+    return t("reminder.weeklyAt", days, r.time);
   }
-  return `每隔 ${r.intervalHours} 小时提醒一次`;
+  return t("reminder.everyNHours", r.intervalHours);
 }
 
 export default function ReminderSettings() {
@@ -35,7 +36,7 @@ export default function ReminderSettings() {
     if (!reminder.enabled) {
       const ok = await requestPermission();
       if (!ok) {
-        toast(permission === "unsupported" ? "当前环境不支持系统通知" : "通知权限未授予，请到系统设置开启", "warn");
+        toast(permission === "unsupported" ? t("reminder.notSupported") : t("reminder.permissionNotGranted"), "warn");
       }
     }
     setReminder({ enabled: !reminder.enabled });
@@ -43,11 +44,11 @@ export default function ReminderSettings() {
 
   const handleTest = async () => {
     if (permission !== "granted") {
-      toast("先开启通知权限", "warn");
+      toast(t("reminder.sendTest"), "warn");
       return;
     }
-    await fire("自卫吧 · 测试提醒", "这是一条测试提醒。");
-    toast("已发送测试通知", "success");
+    await fire(`${t("app.name")} · ${t("reminder.sendTest")}`, t("reminder.sendTest"));
+    toast(t("reminder.sendTest"), "success");
   };
 
   const toggleWeekday = (w: number) => {
@@ -70,7 +71,7 @@ export default function ReminderSettings() {
             {reminder.enabled ? <Bell size={18} /> : <BellOff size={18} />}
           </div>
           <div>
-            <div className="text-sm text-cream">提醒</div>
+            <div className="text-sm text-cream">{t("reminder.title")}</div>
             <div className="text-xs text-muted">{summarize(reminder)}</div>
           </div>
         </div>
@@ -79,7 +80,7 @@ export default function ReminderSettings() {
           onClick={handleToggleEnabled}
           role="switch"
           aria-checked={reminder.enabled}
-          aria-label={reminder.enabled ? "关闭提醒" : "开启提醒"}
+          aria-label={reminder.enabled ? t("common.close") : t("reminder.title")}
           className={cn(
             "relative h-7 w-12 shrink-0 appearance-none rounded-full border-0 p-0 transition-colors",
             reminder.enabled ? "bg-amber" : "bg-ink-700",
@@ -100,7 +101,7 @@ export default function ReminderSettings() {
           <div>
             <div className="mb-2 flex items-center gap-2 text-sm text-mist">
               <Repeat size={15} />
-              提醒频率
+              {t("reminder.frequency")}
             </div>
             <div className="grid grid-cols-3 gap-2">
               {MODE_OPTIONS.map((opt) => {
@@ -118,7 +119,7 @@ export default function ReminderSettings() {
                     )}
                   >
                     <Icon size={16} />
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </button>
                 );
               })}
@@ -130,7 +131,7 @@ export default function ReminderSettings() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-sm text-mist">
                 <Clock size={15} />
-                提醒时间
+                {t("reminder.time")}
               </div>
               <input
                 type="time"
@@ -146,10 +147,10 @@ export default function ReminderSettings() {
             <div>
               <div className="mb-2 flex items-center gap-2 text-sm text-mist">
                 <CalendarDays size={15} />
-                提醒日（可多选）
+                {t("reminder.weekdays")}
               </div>
               <div className="flex gap-1.5">
-                {WEEKDAY_LABELS.map((label, w) => {
+                {WEEKDAY_KEYS.map((key, w) => {
                   const active = reminder.weekdays.includes(w);
                   return (
                     <button
@@ -162,13 +163,13 @@ export default function ReminderSettings() {
                           : "border-line bg-ink-800 text-muted hover:border-amber/40",
                       )}
                     >
-                      {label}
+                      {t(key)}
                     </button>
                   );
                 })}
               </div>
               {reminder.weekdays.length === 0 && (
-                <p className="mt-2 text-xs text-red-300/80">请至少选择一天</p>
+                <p className="mt-2 text-xs text-red-300/80">{t("reminder.selectAtLeastOneDay")}</p>
               )}
             </div>
           )}
@@ -178,7 +179,7 @@ export default function ReminderSettings() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-sm text-mist">
                 <Repeat size={15} />
-                间隔小时数
+                {t("reminder.intervalHours")}
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -192,7 +193,7 @@ export default function ReminderSettings() {
                   }}
                   className="w-20 rounded-lg border border-line bg-ink-800 px-3 py-1.5 text-center font-mono text-amber-glow outline-none focus:border-amber/50"
                 />
-                <span className="text-sm text-muted">小时</span>
+                <span className="text-sm text-muted">{t("reminder.hourUnit")}</span>
               </div>
             </div>
           )}
@@ -201,13 +202,13 @@ export default function ReminderSettings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-mist">
               {reminder.sound ? <Volume2 size={15} /> : <VolumeX size={15} />}
-              提示音
+              {t("reminder.sound")}
             </div>
             <button
               onClick={() => setReminder({ sound: !reminder.sound })}
               role="switch"
               aria-checked={reminder.sound}
-              aria-label={reminder.sound ? "关闭提示音" : "开启提示音"}
+              aria-label={reminder.sound ? t("common.close") : t("reminder.sound")}
               className={cn(
                 "relative h-6 w-11 shrink-0 appearance-none rounded-full border-0 p-0 transition-colors",
                 reminder.sound ? "bg-amber" : "bg-ink-700",
@@ -228,17 +229,17 @@ export default function ReminderSettings() {
             className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-ink-800 py-2 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow"
           >
             <Radio size={14} />
-            发送一条测试通知
+            {t("reminder.sendTest")}
           </button>
 
           {permission === "denied" && (
             <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-              通知权限未开启。请到手机「设置 → 应用 → 自卫吧 → 通知」打开通知权限，然后回到这里点「重新请求权限」。
+              {t("reminder.permissionNotGranted")}
             </p>
           )}
           {permission === "unsupported" && (
             <p className="rounded-lg border border-line bg-ink-800 px-3 py-2 text-xs text-muted">
-              当前环境不支持系统通知。
+              {t("reminder.notSupported")}
             </p>
           )}
           {permission !== "granted" && permission !== "unsupported" && (
@@ -246,13 +247,13 @@ export default function ReminderSettings() {
               onClick={() => void requestPermission()}
               className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-ink-800 py-2 text-sm text-mist transition-colors hover:border-amber/40 hover:text-amber-glow"
             >
-              重新请求通知权限
+              {t("reminder.requestPermission")}
             </button>
           )}
           <p className="text-[11px] leading-relaxed text-muted/80">
             {isNative
-              ? "提醒会在后台按时推送，即使关闭 App 也能收到。"
-              : "提示：浏览器环境下通知仅在本应用打开时生效。关闭页面后不会收到后台提醒。"}
+              ? t("reminder.backgroundDelivery")
+              : t("reminder.browserNote")}
           </p>
         </div>
       )}

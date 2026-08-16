@@ -4,6 +4,7 @@ import { useRecordStore } from "@/store/useRecordStore";
 import { useUIStore } from "@/store/useUIStore";
 import { toast } from "@/store/useToastStore";
 import { formatDuration } from "@/lib/date";
+import { t } from "@/store/useI18nStore";
 
 export default function TimerStopSheet() {
   const open = useUIStore((s) => s.showTimerStop);
@@ -45,13 +46,13 @@ export default function TimerStopSheet() {
       note: note.trim() || undefined,
       isTimerEntry: true, // 计时按钮来的 —— 真实时长，计入排行榜
     });
-    toast("已保存记录", "success");
+    toast(t('timerStop.save'), "success");
     setSaving(false);
     closeTimerStop();
   };
 
   const handleDiscard = () => {
-    toast("已丢弃本次记录", "warn");
+    toast(t('timerStop.discard'), "warn");
     closeTimerStop();
   };
 
@@ -60,7 +61,7 @@ export default function TimerStopSheet() {
   const hasTools = timer.tools.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 pb-[72px] flex items-end justify-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
         onClick={handleDiscard}
@@ -71,8 +72,8 @@ export default function TimerStopSheet() {
           <div className="flex items-center gap-2">
             <CheckCircle size={22} className="text-amber" />
             <div>
-              <h3 className="font-display text-lg text-cream">时间到了</h3>
-              <p className="text-xs text-muted">记录这次感受，几秒就好</p>
+              <h3 className="font-display text-lg text-cream">{t('timerStop.title')}</h3>
+              <p className="text-xs text-muted">{t('timerStop.desc')}</p>
             </div>
           </div>
           <button onClick={handleDiscard} className="text-muted hover:text-mist">
@@ -93,7 +94,7 @@ export default function TimerStopSheet() {
           <div className="mb-4 rounded-xl border border-line bg-ink-900/40 p-3">
             {hasForms && (
               <div className="mb-2">
-                <span className="text-[11px] text-muted">形式</span>
+                <span className="text-[11px] text-muted">{t('timerStop.forms')}</span>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {timer.forms.map((f) => (
                     <span
@@ -108,14 +109,14 @@ export default function TimerStopSheet() {
             )}
             {hasTools && (
               <div>
-                <span className="text-[11px] text-muted">道具</span>
+                <span className="text-[11px] text-muted">{t('timerStop.tools')}</span>
                 <div className="mt-1 flex flex-wrap gap-1.5">
-                  {timer.tools.map((t) => (
+                  {timer.tools.map((tool) => (
                     <span
-                      key={t}
+                      key={tool}
                       className="rounded-full bg-ink-800 px-2 py-0.5 text-[11px] text-mist"
                     >
-                      {t}
+                      {tool}
                     </span>
                   ))}
                 </div>
@@ -126,12 +127,12 @@ export default function TimerStopSheet() {
 
         {/* 备注 */}
         <div className="mb-5">
-          <label className="label-eyebrow mb-2 block">此刻的感受</label>
+          <label className="label-eyebrow mb-2 block">{t('timerStop.feelings')}</label>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            placeholder="身体的感受、心里的想法、环境的氛围……"
+            placeholder={t('timerStop.feelingsPlaceholder')}
             autoFocus
             className="w-full resize-none rounded-xl border border-line bg-ink-900 px-3 py-2.5 text-sm text-cream outline-none transition-colors placeholder:text-muted/60 focus:border-amber/50"
           />
@@ -142,19 +143,19 @@ export default function TimerStopSheet() {
             onClick={handleDiscard}
             className="rounded-full border border-line px-4 py-2.5 text-sm text-mist transition-colors hover:bg-ink-800"
           >
-            丢弃
+            {t('timerStop.discard')}
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber py-2.5 font-medium text-ink-950 shadow-glow transition-all hover:bg-amber-glow disabled:opacity-50"
           >
-            保存记录
+            {t('timerStop.save')}
           </button>
         </div>
 
         <p className="mt-3 text-center text-[11px] text-muted">
-          {totalSec}秒 · {timer.forms.join("、") || "无形式"} · {timer.tools.join("、") || "无道具"}
+          {t('timerStop.summaryFormat', totalSec, timer.forms.join("、") || t('common.none'), timer.tools.join("、") || t('common.none'))}
         </p>
       </div>
     </div>

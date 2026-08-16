@@ -9,6 +9,7 @@ import {
   streakDays,
 } from "@/lib/stats";
 import { formatDateCN, formatDuration, formatInterval, greeting } from "@/lib/date";
+import { t } from "@/store/useI18nStore";
 import StatCard from "@/components/StatCard";
 import SectionTitle from "@/components/SectionTitle";
 import WeekBars from "@/components/charts/WeekBars";
@@ -28,9 +29,9 @@ export default function Overview() {
         value={subTab}
         onChange={(k) => setSubTab(k as SubTab)}
         tabs={[
-          { key: "home", label: "总览" },
-          { key: "calendar", label: "日历" },
-          { key: "insights", label: "洞察" },
+          { key: "home", label: t('overview.title') },
+          { key: "calendar", label: t('calendar.title') },
+          { key: "insights", label: t('insights.title') },
         ]}
       />
       {subTab === "home" && <HomeContent />}
@@ -78,27 +79,27 @@ function HomeContent() {
         {streak > 1 && (
           <p className="mt-3 flex items-center gap-2 text-sm text-mist">
             <Sparkles size={14} className="text-amber" />
-            已连续记录 {streak} 天
+            {t('overview.streakDays', streak)}
           </p>
         )}
       </header>
 
       {/* 今日 */}
       <section>
-        <SectionTitle eyebrow="今日" title="此刻之前" />
+        <SectionTitle eyebrow={t('overview.today')} title={t('overview.beforeNow')} />
         <div className="grid grid-cols-3 gap-3">
           <StatCard
-            label="次数"
+            label={t('overview.count')}
             value={today.count}
-            unit="次"
+            unit={t('overview.countUnit')}
             accent
           />
           <StatCard
-            label="总时长"
+            label={t('overview.totalDuration')}
             value={formatDuration(today.totalMinutes)}
           />
           <StatCard
-            label="距上次"
+            label={t('overview.sinceLast')}
             value={last === null ? "—" : formatInterval(last)}
           />
         </div>
@@ -108,12 +109,12 @@ function HomeContent() {
       <section className="surface p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <div className="label-eyebrow mb-1">本周节律</div>
-            <h2 className="font-display text-xl text-cream">七日之间</h2>
+            <div className="label-eyebrow mb-1">{t('overview.weeklyRhythm')}</div>
+            <h2 className="font-display text-xl text-cream">{t('overview.sevenDays')}</h2>
           </div>
           <div className="text-right">
             <div className="stat-number text-2xl text-amber-glow">{weekTotal}</div>
-            <div className="text-xs text-muted">本周次数</div>
+            <div className="text-xs text-muted">{t('overview.weeklyCount')}</div>
           </div>
         </div>
         <WeekBars data={week} now={nowDate} />
@@ -125,8 +126,8 @@ function HomeContent() {
         className="group flex w-full items-center justify-between rounded-2xl border border-amber/30 bg-amber/[0.07] p-5 transition-all hover:border-amber/60 hover:bg-amber/[0.12] hover:shadow-glow"
       >
         <div className="text-left">
-          <div className="font-display text-xl text-cream">记下这一次</div>
-          <div className="text-xs text-muted">几秒就好，时间、时长、材料</div>
+          <div className="font-display text-xl text-cream">{t('overview.noteThisTime')}</div>
+          <div className="text-xs text-muted">{t('overview.quickNoteHint')}</div>
         </div>
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-amber text-ink-950 shadow-glow transition-transform group-hover:scale-105">
           <Plus size={22} strokeWidth={2.4} />
@@ -136,15 +137,15 @@ function HomeContent() {
       {/* 近期记录 */}
       <section>
         <SectionTitle
-          eyebrow="近期"
-          title="最近的片刻"
+          eyebrow={t('overview.recent')}
+          title={t('overview.recentMoments')}
           extra={
             <button
               onClick={() => setView("record")}
               className="flex items-center gap-1 text-sm text-amber-dim hover:text-amber-glow"
             >
               <TrendingUp size={14} />
-              查看全部
+              {t('overview.viewAll')}
             </button>
           }
         />
@@ -153,7 +154,7 @@ function HomeContent() {
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-line text-muted">
               <Plus size={20} />
             </div>
-            <p className="text-sm text-muted">还没有记录，从一次开始。</p>
+            <p className="text-sm text-muted">{t('overview.emptyTip')}</p>
           </div>
         ) : (
           <div className="space-y-2.5">

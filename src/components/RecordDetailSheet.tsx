@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Clock, Pencil, Trash2, X, Calendar } from "lucide-react";
 import type { RecordEntry } from "@/types";
 import { formatDuration, formatDateCN, formatTime } from "@/lib/date";
+import { t } from "@/store/useI18nStore";
 
 interface RecordDetailSheetProps {
   record: RecordEntry | null;
@@ -32,7 +33,7 @@ export default function RecordDetailSheet({
   const totalSec = Math.round(record.duration * 60);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 pb-[72px] flex items-end justify-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
         onClick={onClose}
@@ -43,9 +44,9 @@ export default function RecordDetailSheet({
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar size={20} className="text-amber" />
-            <h3 className="font-display text-lg text-cream">记录详情</h3>
+            <h3 className="font-display text-lg text-cream">{t('recordDetail.title')}</h3>
           </div>
-          <button onClick={onClose} className="text-muted hover:text-mist" aria-label="关闭">
+          <button onClick={onClose} className="text-muted hover:text-mist" aria-label={t('recordDetail.close')}>
             <X size={18} />
           </button>
         </div>
@@ -63,13 +64,13 @@ export default function RecordDetailSheet({
           <span className="stat-number text-3xl text-amber-glow tabular-nums">
             {formatDuration(record.duration)}
           </span>
-          <span className="text-xs text-muted">{totalSec}秒</span>
+          <span className="text-xs text-muted">{t('recordDetail.secondUnit', totalSec)}</span>
         </div>
 
         {/* 形式 */}
         {hasForms && (
           <div className="mb-3">
-            <span className="label-eyebrow">刺激形式</span>
+            <span className="label-eyebrow">{t('recordDetail.forms')}</span>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {record.forms.map((f) => (
                 <span
@@ -86,7 +87,7 @@ export default function RecordDetailSheet({
         {/* 道具 */}
         {hasTools && (
           <div className="mb-3">
-            <span className="label-eyebrow">辅助道具</span>
+            <span className="label-eyebrow">{t('recordDetail.tools')}</span>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {record.tools.map((t) => (
                 <span
@@ -103,13 +104,13 @@ export default function RecordDetailSheet({
         {/* 备注 */}
         {record.note ? (
           <div className="mb-5">
-            <span className="label-eyebrow">感受与想法</span>
+            <span className="label-eyebrow">{t('recordDetail.noteTitle')}</span>
             <p className="mt-1.5 rounded-xl border border-line bg-ink-900/40 px-3 py-2.5 text-sm leading-relaxed text-cream italic">
-              “{record.note}”
+              {t('recordDetail.noteFormat', record.note)}
             </p>
           </div>
         ) : (
-          <p className="mb-5 text-xs text-muted/70">本次未填写备注。</p>
+          <p className="mb-5 text-xs text-muted/70">{t('recordDetail.noNote')}</p>
         )}
 
         {/* 操作按钮 */}
@@ -119,14 +120,14 @@ export default function RecordDetailSheet({
             className="flex items-center justify-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2.5 text-sm text-red-300 transition-colors hover:bg-red-500/20"
           >
             <Trash2 size={15} />
-            删除
+            {t('recordDetail.delete')}
           </button>
           <button
             onClick={onEdit}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber py-2.5 font-medium text-ink-950 shadow-glow transition-all hover:bg-amber-glow"
           >
             <Pencil size={15} />
-            编辑
+            {t('recordDetail.edit')}
           </button>
         </div>
       </div>

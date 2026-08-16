@@ -8,6 +8,7 @@ import { toast } from "@/store/useToastStore";
 import { checkNameConflict } from "@/lib/friends";
 import { cn } from "@/lib/utils";
 import Avatar, { buildTextAvatar, avatarKind } from "./Avatar";
+import { t } from "@/store/useI18nStore";
 
 export default function ProfileSetupSheet() {
   const open = useUIStore((s) => s.profileSetupOpen);
@@ -27,7 +28,7 @@ export default function ProfileSetupSheet() {
 
   useEffect(() => {
     if (open) {
-      setNameInput(currentName === "我" ? "" : currentName);
+      setNameInput(currentName === t('common.me') ? "" : currentName);
       setLocalAvatar(currentAvatar);
     }
   }, [open, currentName, currentAvatar]);
@@ -43,11 +44,11 @@ export default function ProfileSetupSheet() {
   const handleSave = async () => {
     const trimmed = nameInput.trim();
     if (!trimmed) {
-      toast("给自己起个昵称吧", "warn");
+      toast(t('profileSetup.nicknameHint'), "warn");
       return;
     }
     if (trimmed.length > 12) {
-      toast("昵称最多 12 个字", "warn");
+      toast(t('profileSetup.nicknamePlaceholder'), "warn");
       return;
     }
     setSubmitting(true);
@@ -70,12 +71,12 @@ export default function ProfileSetupSheet() {
     setName(trimmed);
     setAvatar(avatar);
     setSubmitting(false);
-    toast("资料已更新", "success");
+    toast(t('common.save'), "success");
     handleClose();
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end justify-center">
+    <div className="fixed inset-0 z-[100] pb-[72px] flex items-end justify-center">
       {/* 遮罩 */}
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
@@ -91,13 +92,13 @@ export default function ProfileSetupSheet() {
         <div className="relative border-b border-line/60 p-5 pb-4">
           <div className="flex items-center gap-2 text-amber-glow">
             <Sparkles size={18} />
-            <span className="label-eyebrow">完善资料</span>
+            <span className="label-eyebrow">{t('profileSetup.title')}</span>
           </div>
           <h2 className="mt-1 font-display text-2xl text-cream">
-            给自己起个昵称吧
+            {t('profileSetup.nicknameHint')}
           </h2>
           <p className="mt-1 text-sm text-muted">
-            好友通过昵称搜索你，随时可在「我的」页面修改
+            {t('profileSetup.nicknameDesc')}
           </p>
         </div>
 
@@ -106,21 +107,21 @@ export default function ProfileSetupSheet() {
           {/* 头像选择 */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="text-xs text-muted">选一个头像</label>
+              <label className="text-xs text-muted">{t('profileSetup.chooseAvatar')}</label>
               <button
                 onClick={() => {
-                  const t = buildTextAvatar(nameInput.trim() || "我");
-                  setLocalAvatar(t);
+                  const avatar = buildTextAvatar(nameInput.trim() || t('common.me'));
+                  setLocalAvatar(avatar);
                 }}
                 className="flex items-center gap-1.5 rounded-full bg-violet-500/15 px-2.5 py-1 text-[11px] text-violet-200 ring-1 ring-violet-500/30 hover:bg-violet-500/25"
               >
                 <Avatar
-                  value={buildTextAvatar(nameInput.trim() || "我")}
+                  value={buildTextAvatar(nameInput.trim() || t('common.me'))}
                   size={14}
                   ringClass="ring-0"
                   emojiScale={0.85}
                 />
-                用昵称首字生成
+                {t('profileSetup.generateFromInitial')}
               </button>
             </div>
 
@@ -157,7 +158,7 @@ export default function ProfileSetupSheet() {
 
           {/* 昵称输入 */}
           <div>
-            <label className="mb-2 block text-xs text-muted">昵称</label>
+            <label className="mb-2 block text-xs text-muted">{t('profileSetup.nicknameLabel')}</label>
             <div className="flex items-center gap-2">
               <input
                 value={nameInput}
@@ -167,12 +168,12 @@ export default function ProfileSetupSheet() {
                 }}
                 autoFocus
                 maxLength={12}
-                placeholder="输入昵称（最多 12 字）"
+                placeholder={t('profileSetup.nicknamePlaceholder')}
                 className="flex-1 rounded-xl border border-line bg-ink-800 px-4 py-3 text-cream outline-none transition-colors focus:border-amber/50"
               />
             </div>
             <div className="mt-1 flex justify-end text-xs text-muted">
-              {nameInput.length}/12
+              {t('profileSetup.charCount', nameInput.length)}
             </div>
           </div>
         </div>
@@ -185,13 +186,13 @@ export default function ProfileSetupSheet() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber py-3.5 text-base font-medium text-ink-950 transition-all hover:bg-amber-glow disabled:opacity-60"
           >
             <Check size={18} />
-            保存并开始
+            {t('profileSetup.saveAndStart')}
           </button>
           <button
             onClick={handleClose}
             className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm text-muted transition-colors hover:text-mist"
           >
-            稀后再说
+            {t('profileSetup.skipForNow')}
           </button>
         </div>
       </div>

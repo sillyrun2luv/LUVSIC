@@ -3,6 +3,7 @@ import { Check, Plus, Sparkles, Trash2, X } from "lucide-react";
 import type { RecordEntry } from "@/types";
 import { useRecordStore } from "@/store/useRecordStore";
 import { toast } from "@/store/useToastStore";
+import { t } from "@/store/useI18nStore";
 import {
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
@@ -59,15 +60,15 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
   const toggleForm = (f: string) =>
     setSelectedForms((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
 
-  const toggleTool = (t: string) =>
-    setSelectedTools((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+  const toggleTool = (tool: string) =>
+    setSelectedTools((cur) => (cur.includes(tool) ? cur.filter((x) => x !== tool) : [...cur, tool]));
 
   const applyPreset = (id: string) => {
     const p = presets.find((p) => p.id === id);
     if (!p) return;
     setSelectedForms((prev) => [...new Set([...prev, ...p.forms])]);
     setSelectedTools((prev) => [...new Set([...prev, ...p.tools])]);
-    toast(`已应用「${p.name}」`, "success");
+    toast(t("timerStart.presetApplied", p.name), "success");
   };
 
   const handleAddForm = () => {
@@ -90,11 +91,11 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
     const name = presetName.trim();
     if (!name) return;
     if (selectedForms.length === 0 && selectedTools.length === 0) {
-      toast("请先选择至少一个形式或道具", "warn");
+      toast(t("timerStart.needAtLeastOne"), "warn");
       return;
     }
     addPreset(name, selectedForms, selectedTools);
-    toast(`已保存预设「${name}」`, "success");
+    toast(t("record.presetSaved", name), "success");
     setPresetName("");
     setShowSavePreset(false);
   };
@@ -102,7 +103,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
   const handleSubmit = () => {
     const ts = fromDatetimeLocalValue(when);
     if (!ts || Number.isNaN(ts)) {
-      toast("时间不合法", "warn");
+      toast(t("record.timeInvalid"), "warn");
       return;
     }
     const dur = Math.max(0, Math.round(duration * 60) / 60); // 保留到秒精度
@@ -124,10 +125,10 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
         tools: payload.tools,
         note: payload.note,
       });
-      toast("已更新记录", "success");
+      toast(t("record.updated"), "success");
     } else {
       addRecord(payload);
-      toast("已记录（补录，不计入排行榜）", "success");
+      toast(t("record.manualSaved"), "success");
     }
     onDone();
   };
@@ -137,14 +138,14 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
   return (
     <div className="surface animate-riseIn p-5">
       <div className="mb-5 flex items-center justify-between">
-        <h3 className="font-display text-xl text-cream">{editing ? "编辑记录" : "新增一次"}</h3>
+        <h3 className="font-display text-xl text-cream">{editing ? t("record.editEntry") : t("record.newEntry")}</h3>
         <button onClick={onCancel} className="text-sm text-muted hover:text-mist">
-          取消
+          {t("common.cancel")}
         </button>
       </div>
 
       {/* 时间 */}
-      <Field label="时间">
+      <Field label={t("record.time")}>
         <input
           type="datetime-local"
           value={when}
@@ -154,7 +155,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
       </Field>
 
       {/* 时长 */}
-      <Field label="时长">
+      <Field label={t("record.duration")}>
         <div className="flex items-center gap-3">
           <input
             type="number"
@@ -164,7 +165,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
             onChange={(e) => setDuration(Number(e.target.value))}
             className="w-24 rounded-lg border border-line bg-ink-900 px-3 py-2.5 text-center font-mono text-lg text-cream outline-none transition-colors focus:border-amber/50"
           />
-          <span className="text-xs text-muted">分钟</span>
+          <span className="text-xs text-muted">{t("record.minutes")}</span>
           <div className="flex flex-wrap gap-2">
             {QUICK_DURATIONS.map((d) => (
               <button
@@ -172,7 +173,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
                 onClick={() => setDuration(d)}
                 className={cn("chip text-xs", duration === d && "chip-active")}
               >
-                {d}分
+                {d}{t("record.minuteShort")}
               </button>
             ))}
           </div>
@@ -181,7 +182,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
 
       {/* 预设快捷栏 */}
       {presets.length > 0 && (
-        <Field label="快速组合">
+        <Field label={t("record.quickCombo")}>
           <div className="mb-2 flex flex-wrap gap-2">
             {presets.map((p) => (
               <div key={p.id} className="group relative">
@@ -195,10 +196,10 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
                 <button
                   onClick={() => {
                     removePreset(p.id);
-                    toast(`已删除预设「${p.name}」`, "success");
+                    toast(t("record.presetDeleted", p.name), "success");
                   }}
                   className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-ink-800 text-muted opacity-0 transition-opacity hover:text-red-300 group-hover:opacity-100"
-                  title="删除预设"
+                  title={t("common.delete")}
                 >
                   <X size={10} />
                 </button>
@@ -211,7 +212,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
               className="flex items-center gap-1 text-xs text-amber-dim hover:text-amber-glow"
             >
               <Plus size={12} />
-              保存当前选择为预设
+              {t("record.savePreset")}
             </button>
           )}
           {showSavePreset && (
@@ -219,7 +220,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
               <input
                 value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
-                placeholder="预设名称，如：洗澡+手"
+                placeholder={t("record.presetName")}
                 className="flex-1 rounded-md border border-line bg-ink-900 px-2 py-1 text-xs outline-none focus:border-amber/40"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSavePreset();
@@ -230,7 +231,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
                 onClick={handleSavePreset}
                 className="rounded-full bg-amber px-3 py-1 text-xs text-ink-950"
               >
-                保存
+                {t("common.save")}
               </button>
               <button
                 onClick={() => {
@@ -239,7 +240,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
                 }}
                 className="text-xs text-muted hover:text-mist"
               >
-                取消
+                {t("common.cancel")}
               </button>
             </div>
           )}
@@ -247,7 +248,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
       )}
 
       {/* 刺激形式 */}
-      <Field label="刺激形式">
+      <Field label={t("record.forms")}>
         <div className="mb-2 flex flex-wrap gap-2">
           {forms.map((f) => {
             const on = selectedForms.includes(f);
@@ -270,31 +271,31 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
             onKeyDown={(e) => {
               if (e.key === "Enter") handleAddForm();
             }}
-            placeholder="添加自定义形式…"
+            placeholder={t("record.addCustomForm")}
             className="flex-1 rounded-md border border-line bg-ink-900 px-3 py-1.5 text-xs outline-none focus:border-amber/40"
           />
           <button
             onClick={handleAddForm}
             className="rounded-full border border-line px-3 py-1.5 text-xs text-mist hover:border-amber/40 hover:text-amber-glow"
           >
-            + 添加
+            {t("record.add")}
           </button>
         </div>
       </Field>
 
       {/* 辅助道具 */}
-      <Field label="辅助道具">
+      <Field label={t("record.tools")}>
         <div className="mb-2 flex flex-wrap gap-2">
-          {tools.map((t) => {
-            const on = selectedTools.includes(t);
+          {tools.map((tool) => {
+            const on = selectedTools.includes(tool);
             return (
               <button
-                key={t}
-                onClick={() => toggleTool(t)}
+                key={tool}
+                onClick={() => toggleTool(tool)}
                 className={cn("chip", on && "chip-active")}
               >
                 {on && <Check size={14} />}
-                {t}
+                {tool}
               </button>
             );
           })}
@@ -306,25 +307,25 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
             onKeyDown={(e) => {
               if (e.key === "Enter") handleAddTool();
             }}
-            placeholder="添加自定义道具…"
+            placeholder={t("record.addCustomTool")}
             className="flex-1 rounded-md border border-line bg-ink-900 px-3 py-1.5 text-xs outline-none focus:border-amber/40"
           />
           <button
             onClick={handleAddTool}
             className="rounded-full border border-line px-3 py-1.5 text-xs text-mist hover:border-amber/40 hover:text-amber-glow"
           >
-            + 添加
+            {t("record.add")}
           </button>
         </div>
       </Field>
 
       {/* 备注 */}
-      <Field label="备注（可选）">
+      <Field label={t("record.note")}>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          placeholder="此刻的状态、感受……"
+          placeholder={t("record.notePlaceholder")}
           className="w-full resize-none rounded-lg border border-line bg-ink-900 px-3 py-2.5 text-sm text-cream outline-none transition-colors placeholder:text-muted/60 focus:border-amber/50"
         />
       </Field>
@@ -335,7 +336,7 @@ export default function RecordForm({ editing, onDone, onCancel }: RecordFormProp
           className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber px-5 py-3 font-medium text-ink-950 shadow-glow transition-all hover:bg-amber-glow"
         >
           <Plus size={18} strokeWidth={2.2} />
-          {editing ? "保存修改" : "记录下来"}
+          {editing ? t("record.saveChanges") : t("record.submit")}
         </button>
         {editing && (
           <button

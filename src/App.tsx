@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { initAuth } from "@/store/useAuthStore";
 import { useFriendStore } from "@/store/useFriendStore";
+import { t } from "@/store/useI18nStore";
 import Overview from "@/pages/Overview";
 import Record from "@/pages/Record";
 import Friends from "@/pages/Friends";
@@ -29,9 +30,7 @@ import { useAnnouncementStore } from "@/store/useAnnouncementStore";
 import { useNotification } from "@/hooks/useNotification";
 import { startAutoSync } from "@/lib/autoSync";
 
-// 初始化认证监听（只执行一次）
 initAuth();
-// 启动自动云同步（登录后按需自动上传记录/设置/资料/主题）
 startAutoSync();
 
 export default function App() {
@@ -46,19 +45,14 @@ export default function App() {
   const fetchAnnouncement = useAnnouncementStore((s) => s.fetchActive);
   useNotification();
 
-  // 启动闪屏结束后拉取公告
   useEffect(() => {
     if (!showSplash) fetchAnnouncement();
   }, [showSplash, fetchAnnouncement]);
 
-  // 应用主题：启动时 + 切换时
   useEffect(() => {
     applyTheme(themeId, customColor);
   }, [themeId, customColor]);
 
-  // 登录后引导设置昵称：
-  // - 仅在 user.id 发生变化时触发（避免昵称变化、user 引用变化反复弹）
-  // - 昵称是默认"我" + 该用户未 dismiss 过 → 弹窗
   const lastTriggeredUserId = useRef<string | null>(null);
   useEffect(() => {
     const uid = user?.id ?? null;
@@ -66,26 +60,26 @@ export default function App() {
       lastTriggeredUserId.current = null;
       return;
     }
-    // 同一个 user.id 只处理一次（防止 profileName 后续变化导致重复弹）
     if (lastTriggeredUserId.current === uid) return;
     lastTriggeredUserId.current = uid;
 
     const needSetup =
-      profileName === "我" && profileSetupDismissedFor !== uid;
+      profileName === t("common.me") && profileSetupDismissedFor !== uid;
     if (needSetup) {
-      // 延迟一点，让 AuthSheet 先关闭
-      const t = setTimeout(() => openProfileSetup(), 400);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => openProfileSetup(), 400);
+      return () => clearTimeout(timer);
     }
   }, [user, profileName, profileSetupDismissedFor, openProfileSetup]);
 
-  // 进入好友页面时刷新好友数据，顺便更新待审核红点
+  // 进入好友（星球）页面时刷新好友数据，顺便更新待审核/提醒红点
   useEffect(() => {
     if (view === "friends") {
       useFriendStore.getState().refreshAll();
+      useFriendStore.getState().refreshReminderUnread().catch(() => {});
     } else {
       // 其他页面只轻量刷新红点（登录后最多 30s 有效，登录态未就绪忽略）
       useFriendStore.getState().refreshPendingCount().catch(() => {});
+      useFriendStore.getState().refreshReminderUnread().catch(() => {});
     }
   }, [view]);
 

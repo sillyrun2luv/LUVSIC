@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
+import { t } from "@/store/useI18nStore";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -16,8 +17,8 @@ export default function ConfirmDialog({
   open,
   title,
   message,
-  confirmText = "确认",
-  cancelText = "取消",
+  confirmText = t("confirmDialog.confirm"),
+  cancelText = t("confirmDialog.cancel"),
   danger,
   onConfirm,
   onCancel,
@@ -34,7 +35,7 @@ export default function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 pb-[72px] sm:pb-4 sm:items-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
         onClick={onCancel}

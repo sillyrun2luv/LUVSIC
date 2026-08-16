@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { t } from "@/store/useI18nStore";
 
 interface SplashProps {
   onDone: () => void;
@@ -119,19 +120,19 @@ export default function Splash({ onDone }: SplashProps) {
         className="font-display animate-riseIn mt-6 text-6xl font-medium tracking-wide text-amber-glow"
         style={{ animationDelay: "0.9s" }}
       >
-        自卫吧
+        {t('splash.appName')}
       </h1>
       <p
         className="animate-fadeIn mt-3 text-sm text-muted"
         style={{ animationDelay: "1.2s" }}
       >
-        与自己相处的片刻
+        {t('splash.subtitle')}
       </p>
       <p
         className="animate-fadeIn mt-4 max-w-xs text-center text-xs leading-relaxed text-muted/90"
         style={{ animationDelay: "1.4s" }}
       >
-        自慰不是羞耻的事。接纳身体、温柔对待自己，是一件值得被好好记录的小事。
+        {t('splash.message')}
       </p>
 
       {/* 跳过提示 */}
@@ -139,7 +140,7 @@ export default function Splash({ onDone }: SplashProps) {
         className="animate-fadeIn absolute bottom-8 text-[11px] text-muted/60"
         style={{ animationDelay: "1.6s" }}
       >
-        轻触跳过
+        {t('splash.tapToSkip')}
       </p>
     </div>
   );
