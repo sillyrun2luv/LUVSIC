@@ -20,7 +20,8 @@ android {
     // 都用同一把证书，安装时可覆盖升级、无需卸载重装。
     signingConfigs {
         fixed {
-            storeFile file("C:/Users/silly/.android/debug.keystore")
+            // 优先用仓库内的 keystore（CI 可复现同一签名）；本机可放 C:/Users/<user>/.android/debug.keystore
+            storeFile file("debug.keystore")
             storePassword "android"
             keyAlias "androiddebugkey"
             keyPassword "android"
