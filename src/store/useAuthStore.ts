@@ -16,7 +16,7 @@ import { useUIStore } from "@/store/useUIStore";
 function getAuthRedirectTo(): string | undefined {
   return Capacitor.isNativePlatform()
     ? "com.selfdefense.app://auth/callback"
-    : undefined;
+    : "https://sillyrun2luv.github.io/LUVSIC/";
 }
 
 interface AuthState {
@@ -28,7 +28,7 @@ interface AuthState {
   /** 注册成功但邮箱未确认时的"待验证邮箱"地址（展示用） */
   pendingEmailVerification: string | null;
 
-  signUp: (email: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string, inviteCode?: string) => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   clearError: () => void;
@@ -91,57 +91,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   pendingEmailVerification: null,
 
-  signUp: async (email, password) => {
+  signUp: async (email, password, inviteCode?: string) => {
     set({ loading: true, error: null, pendingEmailVerification: null });
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: getAuthRedirectTo()
           ? { emailRedirectTo: getAuthRedirectTo() }
           : {},
       });
       if (error) {
-        set({ error: error.message, loading: false });
+        set({ error: error.message || "注册失败", loading: false });
         return false;
       }
-      const u = data.user;
-      // 情况 1：没 session（Supabase 已开 Confirm email）→ 直接走待验证
-      // 情况 2：有 session 但 email_confirmed_at 还是 null（Supabase 没开 Confirm email 也没关系）
-      //   → 我们**强制要求邮箱验证**：立即 signOut，然后走待验证态（相当于前端兜底）
-      if (u && (!data.session || !u.email_confirmed_at)) {
-        // 如果已经发了 session 但邮箱未验证，先强制登出，防止任何自动登录流程
-        if (data.session && !u.email_confirmed_at) {
-          try {
-            await supabase.auth.signOut({ scope: "local" });
-          } catch {
-            // 静默忽略
-          }
-        }
-        set({
-          loading: false,
-          error: null,
-          session: null,
-          user: null,
-          pendingEmailVerification: email,
-        });
-        return false;
-      }
-      // 邮箱已确认（极端情况：用户已经通过别的流程确认过邮箱）
-      set({
-        session: data.session,
-        user: data.user,
-        loading: false,
-        pendingEmailVerification: null,
-      });
+      // 注册成功，进入待验证态（等待用户点邮件链接完成验证）
+      set({ loading: false, pendingEmailVerification: email });
       return true;
     } catch (e: any) {
       const msg = e?.message || "注册失败";
-      if (/rate.?limit|too.?many/i.test(msg)) {
-        set({ error: "注册请求太频繁，请等一分钟后再试", loading: false });
-      } else {
-        set({ error: msg, loading: false });
-      }
+      set({ error: msg, loading: false });
       return false;
     }
   },
