@@ -147,7 +147,9 @@ export default function FloatingTimer() {
         return p;
       });
     } else if (timer.running) {
-      // 计时态：点方块按钮 → 弹「继续 / 结束」菜单（防误触）
+      // 计时态：点胶囊 → 弹「继续 / 结束」菜单（防误触）
+      // （背板/遮罩层已改用 pointerDown 关闭，此处同步打开不会被同一次
+      //   点按的 trailing click 闪关）
       setShowStopMenu((v) => !v);
     } else {
       startTiming();
@@ -188,7 +190,9 @@ export default function FloatingTimer() {
         {showStopMenu && (
           <div
             className="fixed inset-0 z-40"
-            onClick={() => setShowStopMenu(false)}
+            // 同理用 pointerDown 关闭，避免打开菜单的同一次点按的 trailing
+            // click 命中这层遮罩导致菜单闪关
+            onPointerDown={() => setShowStopMenu(false)}
             aria-hidden
           />
         )}

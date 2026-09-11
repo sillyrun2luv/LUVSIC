@@ -7,6 +7,7 @@ import {
   hasOverlayPermission,
   syncOverlayTimer,
   stopOverlayTimer,
+  noteAppVisibility,
 } from "@/lib/floatingOverlay";
 
 /* ============================================================================
@@ -16,7 +17,7 @@ import {
  * - 计时开始 → 悬浮窗可用则启动悬浮窗；否则发一条"计时中"常驻通知。
  * - 点悬浮窗方块 / 点通知 → 拉起 App，按真实经过时长打开「记录感受」页。
  * - 计时结束/取消 → 悬浮窗与通知都清掉。
- * - 回到前台时重新对齐（覆盖"结束并记录被取消后悬浮窗未恢复"等情况）。
+ * - 前后台切换：退后台拉起原生悬浮窗，回前台收起（网页内胶囊接管）。
  * ========================================================================== */
 
 const TIMER_NOTIF_ID = 900001;
@@ -121,10 +122,8 @@ export function setupTimerNotification() {
     /* ignore */
   });
 
-  // --- 3. 回到前台 → 重新对齐悬浮窗（并刷新通知可用性） ---
+  // --- 3. 前后台切换 → 前台收起原生悬浮窗（网页胶囊接管），后台再拉起 ---
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      void syncOverlayTimer();
-    }
+    void noteAppVisibility(document.visibilityState === "visible");
   });
 }

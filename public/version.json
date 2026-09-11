@@ -1,5 +1,5 @@
 {
-  "version": "1.2.5",
-  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.2.5/ziweiba.apk",
-  "notes": "v1.2.5 更新（v1.2.4 → v1.2.5）：\n\n⚙️ 优化\n· 「距上次」「平均间隔」改为小时制显示（如 53小时20分），不再按天取整，间隔感知更精确\n· 悬浮按钮开始计时：每次都会弹出方式选择页（预填上次选择，可微调后确认），不再静默复用上次方式"
+  "version": "1.2.6",
+  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.2.6/ziweiba.apk",
+  "notes": "v1.2.6 更新（v1.2.5 → v1.2.6）：\n\n🐛 修复\n· 计时中不再同时出现两个悬浮胶囊：原生悬浮窗改为仅在 App 退到后台时显示，回到 App 内自动收起，由应用内悬浮按钮接管"
 }

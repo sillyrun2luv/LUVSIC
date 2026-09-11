@@ -66,7 +66,10 @@ export default function TimerStartSheet() {
     <div className="fixed inset-0 z-50 pb-[72px] flex items-end justify-center">
       <div
         className="absolute inset-0 animate-fadeIn bg-ink-950/70 backdrop-blur-sm"
-        onClick={cancelTimer}
+        // 用 pointerDown 而非 click 关闭：打开本 Sheet 的那次点按，其 trailing
+        // click 会在 Sheet 渲染后才派发（WebView 按派发时画面命中），若用
+        // onClick 会被这层背板接住并立刻把自己关掉（单击闪关、长按正常的 bug）。
+        onPointerDown={cancelTimer}
       />
 
       <div className="surface relative z-10 w-full max-w-lg animate-slideUp p-5 pb-6">

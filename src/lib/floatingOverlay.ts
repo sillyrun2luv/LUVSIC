@@ -4,10 +4,12 @@ import { useRecordStore } from "@/store/useRecordStore";
 import { t } from "@/store/useI18nStore";
 
 /* ============================================================================
- * 全局悬浮计时窗（应用外显示）—— JS 侧桥接
+ * 全局悬浮计时窗（仅应用退后台后显示）—— JS 侧桥接
  * --------------------------------------------------------------------------
  * 原生侧（FloatingTimerService）自己按墙钟算时间并渲染胶囊，
  * JS 只负责：授权查询/跳转、启动/停止信号、以及状态变化的同步调度。
+ * 注意：App 在前台时不显示此原生悬浮窗（由网页内 FloatingTimer 胶囊接管），
+ * 避免一大一小两个计时胶囊同时出现。
  * ========================================================================== */
 
 interface FloatingTimerNative {
@@ -49,13 +51,28 @@ export async function requestOverlayPermission(): Promise<boolean> {
   }
 }
 
-/** 计时状态是否应当显示悬浮窗（原生 + 开关 + 权限 三者齐备） */
+/** App 是否在前台（默认前台）。原生悬浮窗只在后台显示，
+ *  前台时由网页内 FloatingTimer 胶囊接管，避免一大一小两个胶囊并存。 */
+let appForeground = true;
+
+/** 计时状态是否应当显示悬浮窗（原生 + 后台 + 开关 + 权限 四者齐备） */
 async function shouldOverlayRun(): Promise<boolean> {
   if (!native) return false;
+  if (appForeground) return false;
   const { timer } = useUIStore.getState();
   if (!timer.running || timer.startTime === null) return false;
   if (!useRecordStore.getState().settings.overlayTimer) return false;
   return await hasOverlayPermission();
+}
+
+/**
+ * App 前后台切换时调用：
+ * - 回前台 → 收起原生悬浮窗（网页内胶囊接管）
+ * - 退后台 → 计时中则拉起原生悬浮窗
+ */
+export async function noteAppVisibility(foreground: boolean): Promise<void> {
+  appForeground = foreground;
+  await syncOverlayTimer();
 }
 
 /**
