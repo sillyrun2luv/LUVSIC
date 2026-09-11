@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Clock, RotateCcw, Square } from "lucide-react";
-import { useUIStore, getLastTimerSelection } from "@/store/useUIStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useRecordStore } from "@/store/useRecordStore";
 import { t } from "@/store/useI18nStore";
-import { toast } from "@/store/useToastStore";
 
 /* ============================================================================
  * App 内 FloatingTimer —— 可拖动计时按钮
  * --------------------------------------------------------------------------
  * 职责单一：
- *   - 未计时：点击【直接开始计时】（复用上次的形式/道具，不再弹选择页）。
+ *   - 未计时：点击弹出「选择形式/道具」页（TimerStartSheet），
+ *             每次开始计时都可选择/调整方式（预填上次选择，确认后开始）。
  *   - 计时中：显示红色胶囊（脉动红点 + MM:SS + 方停按钮），
  *             方停按钮点击弹「继续计时 / 结束并记录」菜单（防误触）。
  *   - 计时状态持久化在 useUIStore（localStorage），退出/杀死 App 后
@@ -63,7 +63,7 @@ type DragState = {
 
 export default function FloatingTimer() {
   const timer = useUIStore((s) => s.timer);
-  const startTimerWithSelection = useUIStore((s) => s.startTimerWithSelection);
+  const openTimerStart = useUIStore((s) => s.openTimerStart);
   const openTimerStop = useUIStore((s) => s.openTimerStop);
   const showLauncher = useRecordStore((s) => s.settings.showFloatingTimer);
 
@@ -162,12 +162,10 @@ export default function FloatingTimer() {
     }
   };
 
-  /* ---------------- 直接开始计时（复用上次的形式/道具，不弹选择页） ---------------- */
+  /* ---------------- 开始计时：弹出选择页，每次都可选择方式 ---------------- */
   const startTiming = () => {
     if (timer.running) return;
-    const last = getLastTimerSelection();
-    startTimerWithSelection(last.forms, last.tools);
-    toast(t("floatingTimer.startedToast"), "success");
+    openTimerStart();
   };
 
   /* ---------------- 计时中菜单回调 ---------------- */

@@ -1,5 +1,5 @@
 {
-  "version": "1.2.4",
-  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.2.4/ziweiba.apk",
-  "notes": "v1.2.4 更新（v1.2.3 → v1.2.4）：\n\n🐛 修复\n· 修复邮箱验证邮件链接 404：验证跳转地址修正为 /LUVSIC/，网页与 APK 内点击验证均可正常跳回应用\n· 开放普通注册：取消邀请码限制，注册后需邮箱验证\n\n⚙️ 优化\n· 新增每日注册额度闸门（默认每日 280 人），超额时提示「今日注册名额已用完，请明天再来注册」"
+  "version": "1.2.5",
+  "apkUrl": "https://github.com/sillyrun2luv/LUVSIC/releases/download/v1.2.5/ziweiba.apk",
+  "notes": "v1.2.5 更新（v1.2.4 → v1.2.5）：\n\n⚙️ 优化\n· 「距上次」「平均间隔」改为小时制显示（如 53小时20分），不再按天取整，间隔感知更精确\n· 悬浮按钮开始计时：每次都会弹出方式选择页（预填上次选择，可微调后确认），不再静默复用上次方式"
 }

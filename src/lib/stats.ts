@@ -121,10 +121,10 @@ export function regularityScore(records: RecordEntry[], now: Date = new Date()):
 export function regularityAdvice(score: number | null, avgIntervalMs: number): string {
   if (score === null) return t('stats.needMoreRecords');
   if (avgIntervalMs === 0) return t('stats.keepRecording');
-  const intervalDays = avgIntervalMs / 86400000;
+  const intervalHours = avgIntervalMs / 3600000;
   if (score >= 75) {
-    return intervalDays > 0
-      ? t('stats.stableWithInterval', intervalDays.toFixed(1))
+    return intervalHours > 0
+      ? t('stats.stableWithInterval', intervalHours.toFixed(1))
       : t('stats.stable');
   }
   if (score >= 45) {

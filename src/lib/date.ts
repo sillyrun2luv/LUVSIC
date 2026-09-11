@@ -119,22 +119,15 @@ export function formatDuration(minutes: number): string {
   return `${m}分`;
 }
 
-/** 把毫秒间隔格式化为：3小时20分 / 2天 / 刚刚 */
+/** 把毫秒间隔格式化为：53小时20分 / 45分 / 刚刚（小时制，不用天/月） */
 export function formatInterval(ms: number): string {
   if (ms < 0) ms = 0;
   const min = Math.floor(ms / 60000);
   if (min < 1) return t('common.justNow');
   if (min < 60) return t('date.intervalMinutesAgo', min);
   const hours = Math.floor(min / 60);
-  if (hours < 24) {
-    const m = min % 60;
-    return m > 0 ? t('date.intervalHoursMinutesAgo', hours, m) : t('date.intervalHoursAgo', hours);
-  }
-  const days = Math.floor(hours / 24);
-  const h = hours % 24;
-  if (days < 30) return h > 0 ? t('date.intervalDaysHoursAgo', days, h) : t('date.intervalDaysAgo', days);
-  const months = Math.floor(days / 30);
-  return t('date.intervalMonthsAgo', months);
+  const m = min % 60;
+  return m > 0 ? t('date.intervalHoursMinutesAgo', hours, m) : t('date.intervalHoursAgo', hours);
 }
 
 /** 相对当前的时间描述（用于记录项） */

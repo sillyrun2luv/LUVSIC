@@ -114,6 +114,13 @@
     "supportAuthorDesc": "請作者喝杯咖啡",
     "about": "關於",
     "aboutDesc": "版本資訊與更新",
+    "inviteTitle": "邀請好友",
+    "inviteDesc": "把邀請碼發給朋友，TA 輸入邀請碼即可註冊加入「自衛吧」",
+    "inviteEmpty": "暫無邀請碼，可聯絡管理員取得",
+    "inviteCopy": "複製",
+    "inviteShare": "複製邀請語",
+    "inviteCopied": "已複製",
+    "inviteShareText": "邀請你加入「自衛吧」App，我的邀請碼：{0}",
     "deleteAccount": "刪除帳號",
     "deleteAccountDesc": "永久清空雲端+本機資料，不可復原",
     "selectAppIcon": "選擇應用程式圖示",
@@ -582,7 +589,8 @@
     "logoutSuccess": "已登出",
     "loginOrRegister": "登入 / 註冊",
     "signupNote": "註冊後必須到郵箱點擊確認連結，否則無法登入",
-    "loginNote": "登入後資料會自動同步，密碼鎖不會上傳"
+    "loginNote": "登入後資料會自動同步，密碼鎖不會上傳",
+    "inviteCode": "邀請碼（選填）"
   },
   "floatingTimer": {
     "tapToStop": "點擊停止（可繼續計時）",
@@ -819,7 +827,7 @@
   "stats": {
     "needMoreRecords": "再記錄幾次，就能看出你的節律了。",
     "keepRecording": "繼續記錄，讓資料說話。",
-    "stableWithInterval": "節律穩定，平均約每 {0} 天一次，身體有自己的節奏。",
+    "stableWithInterval": "節律穩定，平均約每 {0} 小時一次，身體有自己的節奏。",
     "stable": "節律穩定，身體有自己的節奏。",
     "mostlyRegular": "基本規律，偶爾波動很正常，不必苛責自己。",
     "irregular": "間隔起伏較大，可以試著讓作息更穩定一些。"

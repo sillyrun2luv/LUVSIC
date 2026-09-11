@@ -114,6 +114,13 @@
     "supportAuthorDesc": "Buy the author a coffee",
     "about": "About",
     "aboutDesc": "Version info and updates",
+    "inviteTitle": "Invite friends",
+    "inviteDesc": "Share your invite code — friends sign up with it to join 自卫吧",
+    "inviteEmpty": "No invite codes yet — contact the admin",
+    "inviteCopy": "Copy",
+    "inviteShare": "Copy invite text",
+    "inviteCopied": "Copied",
+    "inviteShareText": "Join me on 自卫吧 — my invite code: {0}",
     "deleteAccount": "Delete account",
     "deleteAccountDesc": "Permanently erase cloud + local data, unrecoverable",
     "selectAppIcon": "Select app icon",
@@ -572,7 +579,8 @@
     "logoutSuccess": "Signed out",
     "loginOrRegister": "Sign in / Register",
     "signupNote": "After registering, you must click the confirmation link in your email, otherwise you cannot sign in",
-    "loginNote": "After signing in, data syncs automatically; passcode lock is not uploaded"
+    "loginNote": "After signing in, data syncs automatically; passcode lock is not uploaded",
+    "inviteCode": "Invite code (optional)"
   },
   "floatingTimer": {
     "tapToStop": "Tap to stop (can continue)",
@@ -804,7 +812,7 @@
   "stats": {
     "needMoreRecords": "A few more entries and we'll start seeing your rhythm.",
     "keepRecording": "Keep recording — let the data speak.",
-    "stableWithInterval": "Stable rhythm, about every {0} days on average — your body has its own pace.",
+    "stableWithInterval": "Stable rhythm, about every {0} hours on average — your body has its own pace.",
     "stable": "Stable rhythm — your body has its own pace.",
     "mostlyRegular": "Mostly regular. Occasional fluctuations are normal, no need to be hard on yourself.",
     "irregular": "Intervals vary quite a bit. You could try making your sleep schedule more consistent."

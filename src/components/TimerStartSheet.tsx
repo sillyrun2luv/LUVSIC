@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, Play, Sparkles, X } from "lucide-react";
 import { useRecordStore } from "@/store/useRecordStore";
-import { useUIStore } from "@/store/useUIStore";
+import { useUIStore, getLastTimerSelection } from "@/store/useUIStore";
 import { toast } from "@/store/useToastStore";
 import { cn } from "@/lib/utils";
 import { t } from "@/store/useI18nStore";
@@ -21,10 +21,12 @@ export default function TimerStartSheet() {
 
   useEffect(() => {
     if (open) {
-      setSelectedForms([]);
-      setSelectedTools([]);
+      // 预填上次使用的形式/道具（过滤掉已被删除的选项），可直接确认或微调后开始
+      const last = getLastTimerSelection();
+      setSelectedForms(last.forms.filter((f) => forms.includes(f)));
+      setSelectedTools(last.tools.filter((tool) => tools.includes(tool)));
     }
-  }, [open]);
+  }, [open, forms, tools]);
 
   useEffect(() => {
     if (!open) return;

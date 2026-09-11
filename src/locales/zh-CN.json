@@ -126,6 +126,13 @@
     "supportAuthorDesc": "请作者喝杯咖啡",
     "about": "关于",
     "aboutDesc": "版本信息与更新",
+    "inviteTitle": "邀请好友",
+    "inviteDesc": "把邀请码发给朋友，TA 输入邀请码即可注册加入「自卫吧」",
+    "inviteEmpty": "暂无邀请码，可联系管理员获取",
+    "inviteCopy": "复制",
+    "inviteShare": "复制邀请语",
+    "inviteCopied": "已复制",
+    "inviteShareText": "邀请你加入「自卫吧」App，我的邀请码：{0}",
     "deleteAccount": "删除账户",
     "deleteAccountDesc": "永久清空云端+本地数据，不可恢复",
     "selectAppIcon": "选择应用图标",
@@ -595,7 +602,8 @@
     "logoutSuccess": "已退出登录",
     "loginOrRegister": "登录 / 注册",
     "signupNote": "注册后必须到邮箱点击确认链接，否则无法登录",
-    "loginNote": "登录后数据会自动同步，密码锁不会上传"
+    "loginNote": "登录后数据会自动同步，密码锁不会上传",
+    "inviteCode": "邀请码（选填）"
   },
   "floatingTimer": {
     "tapToStop": "点击停止（可继续计时）",
@@ -833,7 +841,7 @@
   "stats": {
     "needMoreRecords": "再记录几次，就能看出你的节律了。",
     "keepRecording": "继续记录，让数据说话。",
-    "stableWithInterval": "节律稳定，平均约每 {0} 天一次，身体有自己的节奏。",
+    "stableWithInterval": "节律稳定，平均约每 {0} 小时一次，身体有自己的节奏。",
     "stable": "节律稳定，身体有自己的节奏。",
     "mostlyRegular": "基本规律，偶尔波动很正常，不必苛责自己。",
     "irregular": "间隔起伏较大，可以试着让作息更稳定一些。"
